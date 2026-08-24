@@ -5,18 +5,15 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>National Towing - Patrol Scanner</title>
     
-    <!-- iOS PWA Mobile Directives -->
+    <!-- iOS PWA Directives -->
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="Patrol Scan">
     
-    <!-- Cache-Busted Native iOS & Favicon Icon Links -->
+    <!-- Native iOS & Favicon Icon Links -->
     <link rel="apple-touch-icon" href="apple-touch-icon.png?v=100">
     <link rel="apple-touch-icon-precomposed" href="apple-touch-icon.png?v=100">
     <link rel="icon" type="image/png" href="apple-touch-icon.png?v=100">
-
-    <!-- Client-Side Fast OCR Engine -->
-    <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
 
     <style>
         body { 
@@ -126,7 +123,7 @@
     <div id="status"></div>
 
     <label>Vehicle Registration (ANPR)</label>
-    <input type="text" id="rego" placeholder="e.g. ABC123" style="text-transform: uppercase; font-weight: bold; font-size: 22px; text-align: center; color: #00e676; letter-spacing: 2px;">
+    <input type="text" id="rego" placeholder="e.g. 028LD8" style="text-transform: uppercase; font-weight: bold; font-size: 22px; text-align: center; color: #00e676; letter-spacing: 2px;">
 
     <div style="display: flex; gap: 8px;">
         <div style="flex: 1;">
@@ -135,7 +132,7 @@
         </div>
         <div style="flex: 1;">
             <label>Model</label>
-            <input type="text" id="model" placeholder="Corolla">
+            <input type="text" id="model" placeholder="Camry">
         </div>
     </div>
 
@@ -160,11 +157,10 @@
     <button class="primary" id="submitBtn">LOG VEHICLE PATROL</button>
 </div>
 
-<!-- Hidden Canvas for Fast Image Preprocessing -->
 <canvas id="procCanvas" style="display:none;"></canvas>
 
 <script>
-    const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzewwYSIC5iOe58uUCurMIkgfHbl6vsE_g5dcRtmg8NViZ5m7fFKHEj7JL2JDmPi08aSQ/exec";
+    const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycby1J2WAeWxps19JokZki8X5fmUzLFxB5_N-OPRMVc6i2UKGVdJR8EAMDFdXlgBMRTtMTg/exec";
     let base64Image = "";
 
     const cameraInput = document.getElementById('cameraInput');
@@ -174,20 +170,11 @@
     const canvas = document.getElementById('procCanvas');
     const ctx = canvas.getContext('2d');
 
-    // Preload Tesseract worker in background to save launch latency
-    let worker = null;
-    (async () => {
-        worker = await Tesseract.createWorker('eng');
-        await worker.setParameters({
-            tessedit_char_whitelist: 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789',
-        });
-    })();
-
     cameraInput.addEventListener('change', async (e) => {
         const file = e.target.files[0];
         if (!file) return;
 
-        status.innerText = "Processing image...";
+        status.innerText = "Analyzing Photo (ANPR)...";
 
         const img = new Image();
         img.src = URL.createObjectURL(file);
@@ -196,57 +183,38 @@
             preview.src = img.src;
             preview.style.display = "block";
 
-            // 1. Rescale image to max 1000px width for sub-2-second scanning speed
-            const maxWidth = 1000;
+            // Resize image to max 1200px width for fast upload
+            const maxWidth = 1200;
             const scale = maxWidth / img.width;
             canvas.width = (img.width > maxWidth) ? maxWidth : img.width;
             canvas.height = (img.width > maxWidth) ? img.height * scale : img.height;
 
             ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+            base64Image = canvas.toDataURL('image/jpeg', 0.8).split(',')[1];
 
-            // Save full-res high quality base64 for Drive upload
-            base64Image = canvas.toDataURL('image/jpeg', 0.85).split(',')[1];
-
-            // 2. High-Contrast Grayscale Preprocessing for OCR Engine
-            const imgData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-            const d = imgData.data;
-            for (let i = 0; i < d.length; i += 4) {
-                let avg = (d[i] + d[i + 1] + d[i + 2]) / 3;
-                let v = (avg > 110) ? 255 : 0; // Binary High-contrast threshold
-                d[i] = d[i + 1] = d[i + 2] = v;
-            }
-            ctx.putImageData(imgData, 0, 0);
-
-            status.innerText = "Scanning Registration...";
-
+            // Send payload to Google Cloud OCR Endpoint
             try {
-                if (!worker) {
-                    worker = await Tesseract.createWorker('eng');
-                    await worker.setParameters({ tessedit_char_whitelist: 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789' });
-                }
+                const response = await fetch(GOOGLE_SCRIPT_URL, {
+                    method: "POST",
+                    body: JSON.stringify({
+                        "action": "ocr_scan",
+                        "imageBytes": base64Image
+                    })
+                });
 
-                // Run fast scan on preprocessed canvas
-                const { data: { text } } = await worker.recognize(canvas);
-                
-                // Extract alphanumeric strings matching Australian Rego lengths (3 to 7 chars)
-                const matches = text.match(/[A-Z0-9]{3,7}/g);
-                
-                if (matches && matches.length > 0) {
-                    // Pick the longest character sequence detected
-                    const bestMatch = matches.reduce((a, b) => a.length > b.length ? a : b);
-                    regoInput.value = bestMatch;
-                    status.innerText = "Rego detected! Verify details below.";
+                const result = await response.json();
+                if (result.status === "success" && result.rego) {
+                    regoInput.value = result.rego;
+                    status.innerText = "Rego Scanned Successfully!";
                 } else {
-                    status.innerText = "Could not parse rego clearly. Type manually.";
+                    status.innerText = "Scan completed. Enter rego manually if empty.";
                 }
             } catch (err) {
-                console.error(err);
-                status.innerText = "OCR Scan error. Type rego manually.";
+                status.innerText = "Photo Ready. Enter rego if needed.";
             }
         };
     });
 
-    // Handle Patrol Log Submission
     document.getElementById('submitBtn').addEventListener('click', async () => {
         const regoVal = regoInput.value.trim().toUpperCase();
         if (!regoVal) {
@@ -278,7 +246,6 @@
 
             status.innerText = "Vehicle Logged Successfully!";
             
-            // Reset form for next vehicle
             setTimeout(() => {
                 regoInput.value = "";
                 document.getElementById('make').value = "";
@@ -291,7 +258,6 @@
 
         } catch (err) {
             status.innerText = "Upload failed. Check connection.";
-            console.error(err);
         }
     });
 </script>
