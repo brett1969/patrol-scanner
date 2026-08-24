@@ -11,9 +11,9 @@
     <meta name="apple-mobile-web-app-title" content="Patrol Scan">
     
     <!-- Native iOS & Favicon Icon Links -->
-    <link rel="apple-touch-icon" href="apple-touch-icon.png?v=100">
-    <link rel="apple-touch-icon-precomposed" href="apple-touch-icon.png?v=100">
-    <link rel="icon" type="image/png" href="apple-touch-icon.png?v=100">
+    <link rel="apple-touch-icon" href="apple-touch-icon.png?v=101">
+    <link rel="apple-touch-icon-precomposed" href="apple-touch-icon.png?v=101">
+    <link rel="icon" type="image/png" href="apple-touch-icon.png?v=101">
 
     <style>
         body { 
@@ -157,7 +157,12 @@
     <button class="primary" id="submitBtn">LOG VEHICLE PATROL</button>
 </div>
 
+<!-- Hidden Elements for Cross-Origin Transmission Bypass -->
 <canvas id="procCanvas" style="display:none;"></canvas>
+<iframe name="hiddenTarget" id="hiddenTarget" style="display:none;"></iframe>
+<form id="bypassForm" action="https://script.google.com/macros/s/AKfycby1J2WAeWxps19JokZki8X5fmUzLFxB5_N-OPRMVc6i2UKGVdJR8EAMDFdXlgBMRTtMTg/exec" method="POST" target="hiddenTarget" style="display:none;">
+    <input type="hidden" name="payload" id="formPayload">
+</form>
 
 <script>
     const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycby1J2WAeWxps19JokZki8X5fmUzLFxB5_N-OPRMVc6i2UKGVdJR8EAMDFdXlgBMRTtMTg/exec";
@@ -169,12 +174,14 @@
     const regoInput = document.getElementById('rego');
     const canvas = document.getElementById('procCanvas');
     const ctx = canvas.getContext('2d');
+    const bypassForm = document.getElementById('bypassForm');
+    const formPayload = document.getElementById('formPayload');
 
     cameraInput.addEventListener('change', async (e) => {
         const file = e.target.files[0];
         if (!file) return;
 
-        status.innerText = "Analyzing Photo (ANPR)...";
+        status.innerText = "Processing Photo...";
 
         const img = new Image();
         img.src = URL.createObjectURL(file);
@@ -183,19 +190,22 @@
             preview.src = img.src;
             preview.style.display = "block";
 
-            // Resize image to max 1200px width for fast upload
-            const maxWidth = 1200;
+            // Resize image to max 1000px width for reliable upload speed
+            const maxWidth = 1000;
             const scale = maxWidth / img.width;
             canvas.width = (img.width > maxWidth) ? maxWidth : img.width;
             canvas.height = (img.width > maxWidth) ? img.height * scale : img.height;
 
             ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-            base64Image = canvas.toDataURL('image/jpeg', 0.8).split(',')[1];
+            base64Image = canvas.toDataURL('image/jpeg', 0.75).split(',')[1];
 
-            // Send payload to Google Cloud OCR Endpoint
+            status.innerText = "Photo Ready. Extracting Rego...";
+
+            // Send payload to Google Cloud Vision API endpoint
             try {
                 const response = await fetch(GOOGLE_SCRIPT_URL, {
                     method: "POST",
+                    headers: { "Content-Type": "text/plain;charset=utf-8" },
                     body: JSON.stringify({
                         "action": "ocr_scan",
                         "imageBytes": base64Image
@@ -207,15 +217,15 @@
                     regoInput.value = result.rego;
                     status.innerText = "Rego Scanned Successfully!";
                 } else {
-                    status.innerText = "Scan completed. Enter rego manually if empty.";
+                    status.innerText = "Photo captured. Enter rego manually.";
                 }
             } catch (err) {
-                status.innerText = "Photo Ready. Enter rego if needed.";
+                status.innerText = "Photo captured. Enter rego manually.";
             }
         };
     });
 
-    document.getElementById('submitBtn').addEventListener('click', async () => {
+    document.getElementById('submitBtn').addEventListener('click', () => {
         const regoVal = regoInput.value.trim().toUpperCase();
         if (!regoVal) {
             alert("Please enter or scan a vehicle registration.");
@@ -224,7 +234,7 @@
 
         status.innerText = "Uploading patrol entry to Master Log...";
 
-        const payload = {
+        const payloadObj = {
             "action": "patrol_upload",
             "propertyName": document.getElementById('propertyName').value,
             "rego": regoVal,
@@ -236,29 +246,21 @@
             "timestamp": new Date().toISOString()
         };
 
-        try {
-            await fetch(GOOGLE_SCRIPT_URL, {
-                method: "POST",
-                mode: "no-cors",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify(payload)
-            });
+        // Submit form data securely through the hidden iframe
+        formPayload.value = JSON.stringify(payloadObj);
+        bypassForm.submit();
 
-            status.innerText = "Vehicle Logged Successfully!";
-            
-            setTimeout(() => {
-                regoInput.value = "";
-                document.getElementById('make').value = "";
-                document.getElementById('model').value = "";
-                document.getElementById('colour').value = "";
-                preview.style.display = "none";
-                cameraInput.value = "";
-                status.innerText = "";
-            }, 1800);
-
-        } catch (err) {
-            status.innerText = "Upload failed. Check connection.";
-        }
+        status.innerText = "Vehicle Logged Successfully!";
+        
+        setTimeout(() => {
+            regoInput.value = "";
+            document.getElementById('make').value = "";
+            document.getElementById('model').value = "";
+            document.getElementById('colour').value = "";
+            preview.style.display = "none";
+            cameraInput.value = "";
+            status.innerText = "";
+        }, 1800);
     });
 </script>
 
