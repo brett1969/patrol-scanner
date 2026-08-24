@@ -11,9 +11,12 @@
     <meta name="apple-mobile-web-app-title" content="Patrol Scan">
     
     <!-- Native iOS & Favicon Icon Links -->
-    <link rel="apple-touch-icon" href="apple-touch-icon.png?v=120">
-    <link rel="apple-touch-icon-precomposed" href="apple-touch-icon.png?v=120">
-    <link rel="icon" type="image/png" href="apple-touch-icon.png?v=120">
+    <link rel="apple-touch-icon" href="apple-touch-icon.png?v=130">
+    <link rel="apple-touch-icon-precomposed" href="apple-touch-icon.png?v=130">
+    <link rel="icon" type="image/png" href="apple-touch-icon.png?v=130">
+
+    <!-- Fast Client-Side OCR Engine -->
+    <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
 
     <style>
         body { 
@@ -181,7 +184,7 @@
         const file = e.target.files[0];
         if (!file) return;
 
-        status.innerText = "Analyzing Registration (ANPR)...";
+        status.innerText = "Analyzing Plate (Client-Side ANPR)...";
 
         const img = new Image();
         img.src = URL.createObjectURL(file);
@@ -190,43 +193,41 @@
             preview.src = img.src;
             preview.style.display = "block";
 
-            // Downscale to max 600px width for sub-second network execution
+            // Downscale image to 600px width for fast mobile processing
             const maxWidth = 600;
             const scale = maxWidth / img.width;
             canvas.width = (img.width > maxWidth) ? maxWidth : img.width;
             canvas.height = (img.width > maxWidth) ? img.height * scale : img.height;
 
             ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-            base64Image = canvas.toDataURL('image/jpeg', 0.65).split(',')[1];
+            base64Image = canvas.toDataURL('image/jpeg', 0.7).split(',')[1];
 
-            // Submit ANPR OCR POST Request via hidden Form target
-            const ocrPayload = {
-                "action": "ocr_scan",
-                "imageBytes": base64Image
-            };
-            
-            formPayload.value = JSON.stringify(ocrPayload);
-            bypassForm.submit();
+            // Run Fast Client-Side Tesseract OCR on downscaled canvas
+            try {
+                const worker = await Tesseract.createWorker('eng');
+                await worker.setParameters({
+                    tessedit_char_whitelist: 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789',
+                });
+                
+                const { data: { text } } = await worker.recognize(canvas);
+                await worker.terminate();
 
-            // Check cache for parsed plate text after 1.5 seconds
-            setTimeout(fetchLatestRego, 1500);
+                const matches = text.toUpperCase().match(/[A-Z0-9]{3,7}/g);
+                if (matches) {
+                    const filtered = matches.filter(m => !["QUEENSLAND", "SUNSHINE", "STATE", "PATROL", "SCANNER"].includes(m));
+                    const bestMatch = filtered.find(m => /[A-Z]/.test(m) && /[0-9]/.test(m)) || filtered[0];
+                    if (bestMatch) {
+                        regoInput.value = bestMatch;
+                        status.innerText = "Rego Extracted Successfully!";
+                        return;
+                    }
+                }
+                status.innerText = "Photo Ready. Enter rego manually.";
+            } catch (err) {
+                status.innerText = "Photo Ready. Enter rego manually.";
+            }
         };
     });
-
-    async function fetchLatestRego() {
-        try {
-            const res = await fetch(`${GOOGLE_SCRIPT_URL}?action=get_latest_rego`);
-            const data = await res.json();
-            if (data && data.rego) {
-                regoInput.value = data.rego;
-                status.innerText = "Rego Scanned Successfully!";
-            } else {
-                status.innerText = "Photo Ready. Verify or enter rego below.";
-            }
-        } catch(e) {
-            status.innerText = "Photo Ready. Verify or enter rego below.";
-        }
-    }
 
     document.getElementById('submitBtn').addEventListener('click', () => {
         const regoVal = regoInput.value.trim().toUpperCase();
