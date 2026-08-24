@@ -11,9 +11,9 @@
     <meta name="apple-mobile-web-app-title" content="Patrol Scan">
     
     <!-- Native iOS & Favicon Icon Links -->
-    <link rel="apple-touch-icon" href="apple-touch-icon.png?v=101">
-    <link rel="apple-touch-icon-precomposed" href="apple-touch-icon.png?v=101">
-    <link rel="icon" type="image/png" href="apple-touch-icon.png?v=101">
+    <link rel="apple-touch-icon" href="apple-touch-icon.png?v=102">
+    <link rel="apple-touch-icon-precomposed" href="apple-touch-icon.png?v=102">
+    <link rel="icon" type="image/png" href="apple-touch-icon.png?v=102">
 
     <style>
         body { 
@@ -157,7 +157,7 @@
     <button class="primary" id="submitBtn">LOG VEHICLE PATROL</button>
 </div>
 
-<!-- Hidden Elements for Cross-Origin Transmission Bypass -->
+<!-- Hidden Canvas & Form Transmission Elements -->
 <canvas id="procCanvas" style="display:none;"></canvas>
 <iframe name="hiddenTarget" id="hiddenTarget" style="display:none;"></iframe>
 <form id="bypassForm" action="https://script.google.com/macros/s/AKfycby1J2WAeWxps19JokZki8X5fmUzLFxB5_N-OPRMVc6i2UKGVdJR8EAMDFdXlgBMRTtMTg/exec" method="POST" target="hiddenTarget" style="display:none;">
@@ -190,18 +190,17 @@
             preview.src = img.src;
             preview.style.display = "block";
 
-            // Resize image to max 1000px width for reliable upload speed
+            // Downscale to 1000px max width for fast server transfer
             const maxWidth = 1000;
             const scale = maxWidth / img.width;
             canvas.width = (img.width > maxWidth) ? maxWidth : img.width;
             canvas.height = (img.width > maxWidth) ? img.height * scale : img.height;
 
             ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-            base64Image = canvas.toDataURL('image/jpeg', 0.75).split(',')[1];
+            base64Image = canvas.toDataURL('image/jpeg', 0.8).split(',')[1];
 
-            status.innerText = "Photo Ready. Extracting Rego...";
+            status.innerText = "Extracting Registration (ANPR)...";
 
-            // Send payload to Google Cloud Vision API endpoint
             try {
                 const response = await fetch(GOOGLE_SCRIPT_URL, {
                     method: "POST",
@@ -215,12 +214,12 @@
                 const result = await response.json();
                 if (result.status === "success" && result.rego) {
                     regoInput.value = result.rego;
-                    status.innerText = "Rego Scanned Successfully!";
+                    status.innerText = "Registration Extracted Successfully!";
                 } else {
-                    status.innerText = "Photo captured. Enter rego manually.";
+                    status.innerText = "Photo Ready. Enter rego manually.";
                 }
             } catch (err) {
-                status.innerText = "Photo captured. Enter rego manually.";
+                status.innerText = "Photo Ready. Enter rego manually.";
             }
         };
     });
@@ -246,7 +245,6 @@
             "timestamp": new Date().toISOString()
         };
 
-        // Submit form data securely through the hidden iframe
         formPayload.value = JSON.stringify(payloadObj);
         bypassForm.submit();
 
