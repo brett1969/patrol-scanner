@@ -11,9 +11,9 @@
     <meta name="apple-mobile-web-app-title" content="Patrol Scan">
     
     <!-- Native iOS & Favicon Icon Links -->
-    <link rel="apple-touch-icon" href="apple-touch-icon.png?v=112">
-    <link rel="apple-touch-icon-precomposed" href="apple-touch-icon.png?v=112">
-    <link rel="icon" type="image/png" href="apple-touch-icon.png?v=112">
+    <link rel="apple-touch-icon" href="apple-touch-icon.png?v=115">
+    <link rel="apple-touch-icon-precomposed" href="apple-touch-icon.png?v=115">
+    <link rel="icon" type="image/png" href="apple-touch-icon.png?v=115">
 
     <style>
         body { 
@@ -177,23 +177,11 @@
     const bypassForm = document.getElementById('bypassForm');
     const formPayload = document.getElementById('formPayload');
 
-    // Callback for ANPR JSONP execution
-    window.handleOcrResult = function(data) {
-        if (data && data.status === "success" && data.rego) {
-            regoInput.value = data.rego;
-            status.innerText = "Rego Scanned Successfully!";
-        } else {
-            status.innerText = "Photo Ready. Verify details below.";
-        }
-        const oldScript = document.getElementById('jsonp_script');
-        if (oldScript) oldScript.remove();
-    };
-
     cameraInput.addEventListener('change', async (e) => {
         const file = e.target.files[0];
         if (!file) return;
 
-        status.innerText = "Processing Photo & Running ANPR...";
+        status.innerText = "Analyzing Registration (ANPR)...";
 
         const img = new Image();
         img.src = URL.createObjectURL(file);
@@ -202,7 +190,7 @@
             preview.src = img.src;
             preview.style.display = "block";
 
-            // Resize to 800px max width for fast ANPR transmission
+            // Downscale to 800px max width for optimal OCR speed
             const maxWidth = 800;
             const scale = maxWidth / img.width;
             canvas.width = (img.width > maxWidth) ? maxWidth : img.width;
@@ -211,13 +199,34 @@
             ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
             base64Image = canvas.toDataURL('image/jpeg', 0.75).split(',')[1];
 
-            // Trigger ANPR via JSONP
-            const script = document.createElement('script');
-            script.id = 'jsonp_script';
-            script.src = `${GOOGLE_SCRIPT_URL}?action=ocr_scan&callback=handleOcrResult&imageBytes=${encodeURIComponent(base64Image)}`;
-            document.body.appendChild(script);
+            // Submit ANPR OCR POST Request via hidden Form target
+            const ocrPayload = {
+                "action": "ocr_scan",
+                "imageBytes": base64Image
+            };
+            
+            formPayload.value = JSON.stringify(ocrPayload);
+            bypassForm.submit();
+
+            // Check background sync status after brief processing delay
+            setTimeout(fetchLatestRego, 3500);
         };
     });
+
+    async function fetchLatestRego() {
+        try {
+            const res = await fetch(`${GOOGLE_SCRIPT_URL}?action=get_latest_rego`);
+            const data = await res.json();
+            if (data && data.rego) {
+                regoInput.value = data.rego;
+                status.innerText = "Rego Scanned Successfully!";
+            } else {
+                status.innerText = "Photo Ready. Verify or enter rego below.";
+            }
+        } catch(e) {
+            status.innerText = "Photo Ready. Verify or enter rego below.";
+        }
+    }
 
     document.getElementById('submitBtn').addEventListener('click', () => {
         const regoVal = regoInput.value.trim().toUpperCase();
