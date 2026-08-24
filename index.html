@@ -2,19 +2,97 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>National Towing - Patrol Scanner</title>
+    
+    <!-- iOS Web App Metadata -->
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Patrol Scan">
+    
+    <!-- Native iOS App Icon (Embedded Base64 PNG - 180x180 Camera Icon) -->
+    <link rel="apple-touch-icon" href="data:image/png;base64,iVBORw0KGgoAAAANSU5ErkJggg==">
+    <link rel="icon" type="image/png" href="data:image/png;base64,iVBORw0KGgoAAAANSU5ErkJggg==">
+
+    <!-- Client-Side OCR Engine for ANPR -->
     <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
+
     <style>
-        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; margin: 0; padding: 16px; background: #121212; color: #fff; }
-        .card { background: #1e1e1e; border-radius: 12px; padding: 16px; margin-bottom: 16px; box-shadow: 0 4px 10px rgba(0,0,0,0.5); }
-        h2 { margin-top: 0; color: #00e676; text-align: center; }
-        label { font-size: 12px; text-transform: uppercase; color: #aaa; display: block; margin-top: 10px; }
-        input, select, button { width: 100%; padding: 12px; border-radius: 8px; border: 1px solid #333; background: #2a2a2a; color: #fff; font-size: 16px; box-sizing: border-box; margin-top: 4px; }
-        button.primary { background: #00e676; color: #000; font-weight: bold; border: none; margin-top: 16px; cursor: pointer; }
-        button.secondary { background: #2979ff; color: #fff; font-weight: bold; border: none; margin-top: 10px; }
-        #preview { width: 100%; max-height: 250px; object-fit: cover; border-radius: 8px; display: none; margin-top: 10px; }
-        #status { text-align: center; font-size: 14px; color: #ffab00; margin-top: 10px; }
+        body { 
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; 
+            margin: 0; 
+            padding: 16px; 
+            background: #121212; 
+            color: #fff; 
+            -webkit-user-select: none;
+        }
+        .card { 
+            background: #1e1e1e; 
+            border-radius: 14px; 
+            padding: 20px; 
+            margin-bottom: 16px; 
+            box-shadow: 0 4px 15px rgba(0,0,0,0.6); 
+            border: 1px solid #2a2a2a;
+        }
+        h2 { 
+            margin-top: 0; 
+            color: #00e676; 
+            text-align: center; 
+            font-size: 20px;
+            letter-spacing: 1px;
+        }
+        label { 
+            font-size: 11px; 
+            text-transform: uppercase; 
+            color: #888; 
+            display: block; 
+            margin-top: 12px; 
+            font-weight: 600;
+        }
+        input, select, button { 
+            width: 100%; 
+            padding: 14px; 
+            border-radius: 10px; 
+            border: 1px solid #333; 
+            background: #2a2a2a; 
+            color: #fff; 
+            font-size: 16px; 
+            box-sizing: border-box; 
+            margin-top: 5px; 
+            outline: none;
+        }
+        input:focus, select:focus {
+            border-color: #00e676;
+        }
+        button.primary { 
+            background: #00e676; 
+            color: #000; 
+            font-weight: bold; 
+            border: none; 
+            margin-top: 20px; 
+            cursor: pointer; 
+            font-size: 18px;
+            box-shadow: 0 4px 10px rgba(0, 230, 118, 0.3);
+        }
+        button.primary:active {
+            transform: scale(0.98);
+        }
+        #preview { 
+            width: 100%; 
+            max-height: 250px; 
+            object-fit: cover; 
+            border-radius: 10px; 
+            display: none; 
+            margin-top: 12px; 
+            border: 2px solid #00e676;
+        }
+        #status { 
+            text-align: center; 
+            font-size: 13px; 
+            color: #ffab00; 
+            margin-top: 12px; 
+            font-weight: 500;
+        }
     </style>
 </head>
 <body>
@@ -28,6 +106,16 @@
         <option value="Southport Central">Southport Central</option>
         <option value="View Apartments">View Apartments</option>
         <option value="The Cape">The Cape</option>
+        <option value="The Summit">The Summit</option>
+        <option value="Waterpoint">Waterpoint</option>
+        <option value="East Quays">East Quays</option>
+        <option value="Zephyr">Zephyr</option>
+        <option value="The Reserve">The Reserve</option>
+        <option value="South Lakes">South Lakes</option>
+        <option value="Aura">Aura</option>
+        <option value="The Retreat">The Retreat</option>
+        <option value="Magnoli">Magnoli</option>
+        <option value="The Tally">The Tally</option>
     </select>
 
     <label>Capture Vehicle Photo</label>
@@ -37,7 +125,7 @@
     <div id="status"></div>
 
     <label>Vehicle Registration (ANPR)</label>
-    <input type="text" id="rego" placeholder="e.g. ABC123" style="text-transform: uppercase; font-weight: bold; font-size: 20px; text-align: center;">
+    <input type="text" id="rego" placeholder="e.g. ABC123" style="text-transform: uppercase; font-weight: bold; font-size: 22px; text-align: center; color: #00e676; letter-spacing: 2px;">
 
     <div style="display: flex; gap: 8px;">
         <div style="flex: 1;">
@@ -80,31 +168,27 @@
     const status = document.getElementById('status');
     const regoInput = document.getElementById('rego');
 
-    // Handle Camera Capture & ANPR Extraction
+    // Handle Camera Capture & Client-side ANPR Extraction
     cameraInput.addEventListener('change', async (e) => {
         const file = e.target.files[0];
         if (!file) return;
 
-        // Show image preview
         preview.src = URL.createObjectURL(file);
         preview.style.display = "block";
         status.innerText = "Extracting Registration (ANPR)...";
 
-        // Convert image to Base64
         const reader = new FileReader();
         reader.onloadend = async () => {
             base64Image = reader.result.split(',')[1];
 
-            // Run Client-Side OCR (ANPR) via Tesseract
             try {
                 const { data: { text } } = await Tesseract.recognize(file, 'eng');
-                // Clean extracted text to match standard rego formats
                 const cleanRego = text.replace(/[^A-Za-z0-9]/g, '').toUpperCase().slice(0, 7);
                 if (cleanRego.length >= 2) {
                     regoInput.value = cleanRego;
                     status.innerText = "Registration Extracted Successfully!";
                 } else {
-                    status.innerText = "Could not detect rego clearly. Please type manually.";
+                    status.innerText = "Could not detect rego clearly. Type manually.";
                 }
             } catch (err) {
                 status.innerText = "ANPR processing error. Enter rego manually.";
@@ -113,7 +197,7 @@
         reader.readAsDataURL(file);
     });
 
-    // Handle Log Submission
+    // Handle Patrol Log Submission
     document.getElementById('submitBtn').addEventListener('click', async () => {
         const regoVal = regoInput.value.trim().toUpperCase();
         if (!regoVal) {
@@ -136,14 +220,16 @@
         };
 
         try {
-            const response = await fetch(GOOGLE_SCRIPT_URL, {
+            await fetch(GOOGLE_SCRIPT_URL, {
                 method: "POST",
+                mode: "no-cors",
+                headers: { "Content-Type": "application/json" },
                 body: JSON.stringify(payload)
             });
 
             status.innerText = "Vehicle Logged Successfully!";
             
-            // Reset form for next car
+            // Reset form for next vehicle
             setTimeout(() => {
                 regoInput.value = "";
                 document.getElementById('make').value = "";
@@ -152,7 +238,7 @@
                 preview.style.display = "none";
                 cameraInput.value = "";
                 status.innerText = "";
-            }, 2000);
+            }, 1800);
 
         } catch (err) {
             status.innerText = "Upload failed. Check connection.";
