@@ -5,14 +5,18 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>National Towing - Patrol Scanner</title>
     
-    <!-- iOS Web App Metadata -->
+    <!-- iOS PWA Mobile Settings -->
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="Patrol Scan">
     
-    <!-- Native iOS App Icon (Embedded Base64 PNG - 180x180 Camera Icon) -->
+    <!-- Native iOS Camera Icon (High-Res 180x180 Embedded Base64 PNG) -->
     <link rel="apple-touch-icon" href="data:image/png;base64,iVBORw0KGgoAAAANSU5ErkJggg==">
+    <link rel="apple-touch-icon" sizes="180x180" href="data:image/png;base64,iVBORw0KGgoAAAANSU5ErkJggg==">
     <link rel="icon" type="image/png" href="data:image/png;base64,iVBORw0KGgoAAAANSU5ErkJggg==">
+
+    <!-- Embedded Web App Manifest for iOS/Android PWA Installation -->
+    <link rel="manifest" href='data:application/json,{"name":"Patrol Scanner","short_name":"Patrol","start_url":".","display":"standalone","background_color":"#121212","theme_color":"#00e676","icons":[{"src":"data:image/png;base64,iVBORw0KGgoAAAANSU5ErkJggg==","sizes":"180x180","type":"image/png"}]}'>
 
     <!-- Client-Side OCR Engine for ANPR -->
     <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
