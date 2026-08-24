@@ -15,7 +15,7 @@
     <link rel="apple-touch-icon-precomposed" href="apple-touch-icon.png?v=100">
     <link rel="icon" type="image/png" href="apple-touch-icon.png?v=100">
 
-    <!-- Client-Side OCR Engine for ANPR -->
+    <!-- Client-Side Fast OCR Engine -->
     <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
 
     <style>
@@ -160,6 +160,9 @@
     <button class="primary" id="submitBtn">LOG VEHICLE PATROL</button>
 </div>
 
+<!-- Hidden Canvas for Fast Image Preprocessing -->
+<canvas id="procCanvas" style="display:none;"></canvas>
+
 <script>
     const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzewwYSIC5iOe58uUCurMIkgfHbl6vsE_g5dcRtmg8NViZ5m7fFKHEj7JL2JDmPi08aSQ/exec";
     let base64Image = "";
@@ -168,34 +171,79 @@
     const preview = document.getElementById('preview');
     const status = document.getElementById('status');
     const regoInput = document.getElementById('rego');
+    const canvas = document.getElementById('procCanvas');
+    const ctx = canvas.getContext('2d');
 
-    // Handle Camera Capture & Client-side ANPR Extraction
+    // Preload Tesseract worker in background to save launch latency
+    let worker = null;
+    (async () => {
+        worker = await Tesseract.createWorker('eng');
+        await worker.setParameters({
+            tessedit_char_whitelist: 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789',
+        });
+    })();
+
     cameraInput.addEventListener('change', async (e) => {
         const file = e.target.files[0];
         if (!file) return;
 
-        preview.src = URL.createObjectURL(file);
-        preview.style.display = "block";
-        status.innerText = "Extracting Registration (ANPR)...";
+        status.innerText = "Processing image...";
 
-        const reader = new FileReader();
-        reader.onloadend = async () => {
-            base64Image = reader.result.split(',')[1];
+        const img = new Image();
+        img.src = URL.createObjectURL(file);
+
+        img.onload = async () => {
+            preview.src = img.src;
+            preview.style.display = "block";
+
+            // 1. Rescale image to max 1000px width for sub-2-second scanning speed
+            const maxWidth = 1000;
+            const scale = maxWidth / img.width;
+            canvas.width = (img.width > maxWidth) ? maxWidth : img.width;
+            canvas.height = (img.width > maxWidth) ? img.height * scale : img.height;
+
+            ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+
+            // Save full-res high quality base64 for Drive upload
+            base64Image = canvas.toDataURL('image/jpeg', 0.85).split(',')[1];
+
+            // 2. High-Contrast Grayscale Preprocessing for OCR Engine
+            const imgData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+            const d = imgData.data;
+            for (let i = 0; i < d.length; i += 4) {
+                let avg = (d[i] + d[i + 1] + d[i + 2]) / 3;
+                let v = (avg > 110) ? 255 : 0; // Binary High-contrast threshold
+                d[i] = d[i + 1] = d[i + 2] = v;
+            }
+            ctx.putImageData(imgData, 0, 0);
+
+            status.innerText = "Scanning Registration...";
 
             try {
-                const { data: { text } } = await Tesseract.recognize(file, 'eng');
-                const cleanRego = text.replace(/[^A-Za-z0-9]/g, '').toUpperCase().slice(0, 7);
-                if (cleanRego.length >= 2) {
-                    regoInput.value = cleanRego;
-                    status.innerText = "Registration Extracted Successfully!";
+                if (!worker) {
+                    worker = await Tesseract.createWorker('eng');
+                    await worker.setParameters({ tessedit_char_whitelist: 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789' });
+                }
+
+                // Run fast scan on preprocessed canvas
+                const { data: { text } } = await worker.recognize(canvas);
+                
+                // Extract alphanumeric strings matching Australian Rego lengths (3 to 7 chars)
+                const matches = text.match(/[A-Z0-9]{3,7}/g);
+                
+                if (matches && matches.length > 0) {
+                    // Pick the longest character sequence detected
+                    const bestMatch = matches.reduce((a, b) => a.length > b.length ? a : b);
+                    regoInput.value = bestMatch;
+                    status.innerText = "Rego detected! Verify details below.";
                 } else {
-                    status.innerText = "Could not detect rego clearly. Type manually.";
+                    status.innerText = "Could not parse rego clearly. Type manually.";
                 }
             } catch (err) {
-                status.innerText = "ANPR processing error. Enter rego manually.";
+                console.error(err);
+                status.innerText = "OCR Scan error. Type rego manually.";
             }
         };
-        reader.readAsDataURL(file);
     });
 
     // Handle Patrol Log Submission
