@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>National Towing - Patrol Scanner</title>
+    <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; margin: 0; padding: 16px; background: #121212; color: #fff; }
+        .card { background: #1e1e1e; border-radius: 12px; padding: 16px; margin-bottom: 16px; box-shadow: 0 4px 10px rgba(0,0,0,0.5); }
+        h2 { margin-top: 0; color: #00e676; text-align: center; }
+        label { font-size: 12px; text-transform: uppercase; color: #aaa; display: block; margin-top: 10px; }
+        input, select, button { width: 100%; padding: 12px; border-radius: 8px; border: 1px solid #333; background: #2a2a2a; color: #fff; font-size: 16px; box-sizing: border-box; margin-top: 4px; }
+        button.primary { background: #00e676; color: #000; font-weight: bold; border: none; margin-top: 16px; cursor: pointer; }
+        button.secondary { background: #2979ff; color: #fff; font-weight: bold; border: none; margin-top: 10px; }
+        #preview { width: 100%; max-height: 250px; object-fit: cover; border-radius: 8px; display: none; margin-top: 10px; }
+        #status { text-align: center; font-size: 14px; color: #ffab00; margin-top: 10px; }
+    </style>
+</head>
+<body>
+
+<div class="card">
+    <h2>NIGHT PATROL SCANNER</h2>
+    
+    <label>Select Property / Location</label>
+    <select id="propertyName">
+        <option value="GENERAL">Select Property...</option>
+        <option value="Southport Central">Southport Central</option>
+        <option value="View Apartments">View Apartments</option>
+        <option value="The Cape">The Cape</option>
+    </select>
+
+    <label>Capture Vehicle Photo</label>
+    <input type="file" id="cameraInput" accept="image/*" capture="environment">
+    <img id="preview" alt="Vehicle Preview">
+
+    <div id="status"></div>
+
+    <label>Vehicle Registration (ANPR)</label>
+    <input type="text" id="rego" placeholder="e.g. ABC123" style="text-transform: uppercase; font-weight: bold; font-size: 20px; text-align: center;">
+
+    <div style="display: flex; gap: 8px;">
+        <div style="flex: 1;">
+            <label>Make</label>
+            <input type="text" id="make" placeholder="Toyota">
+        </div>
+        <div style="flex: 1;">
+            <label>Model</label>
+            <input type="text" id="model" placeholder="Corolla">
+        </div>
+    </div>
+
+    <div style="display: flex; gap: 8px;">
+        <div style="flex: 1;">
+            <label>Colour</label>
+            <input type="text" id="colour" placeholder="White">
+        </div>
+        <div style="flex: 1;">
+            <label>Body Type</label>
+            <select id="bodyType">
+                <option value="Sedan">Sedan</option>
+                <option value="Hatchback">Hatchback</option>
+                <option value="SUV">SUV</option>
+                <option value="Ute">Ute</option>
+                <option value="Coupe">Coupe</option>
+                <option value="Van">Van</option>
+            </select>
+        </div>
+    </div>
+
+    <button class="primary" id="submitBtn">LOG VEHICLE PATROL</button>
+</div>
+
+<script>
+    const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzewwYSIC5iOe58uUCurMIkgfHbl6vsE_g5dcRtmg8NViZ5m7fFKHEj7JL2JDmPi08aSQ/exec";
+    let base64Image = "";
+
+    const cameraInput = document.getElementById('cameraInput');
+    const preview = document.getElementById('preview');
+    const status = document.getElementById('status');
+    const regoInput = document.getElementById('rego');
+
+    // Handle Camera Capture & ANPR Extraction
+    cameraInput.addEventListener('change', async (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+
+        // Show image preview
+        preview.src = URL.createObjectURL(file);
+        preview.style.display = "block";
+        status.innerText = "Extracting Registration (ANPR)...";
+
+        // Convert image to Base64
+        const reader = new FileReader();
+        reader.onloadend = async () => {
+            base64Image = reader.result.split(',')[1];
+
+            // Run Client-Side OCR (ANPR) via Tesseract
+            try {
+                const { data: { text } } = await Tesseract.recognize(file, 'eng');
+                // Clean extracted text to match standard rego formats
+                const cleanRego = text.replace(/[^A-Za-z0-9]/g, '').toUpperCase().slice(0, 7);
+                if (cleanRego.length >= 2) {
+                    regoInput.value = cleanRego;
+                    status.innerText = "Registration Extracted Successfully!";
+                } else {
+                    status.innerText = "Could not detect rego clearly. Please type manually.";
+                }
+            } catch (err) {
+                status.innerText = "ANPR processing error. Enter rego manually.";
+            }
+        };
+        reader.readAsDataURL(file);
+    });
+
+    // Handle Log Submission
+    document.getElementById('submitBtn').addEventListener('click', async () => {
+        const regoVal = regoInput.value.trim().toUpperCase();
+        if (!regoVal) {
+            alert("Please enter or scan a vehicle registration.");
+            return;
+        }
+
+        status.innerText = "Uploading patrol entry to Master Log...";
+
+        const payload = {
+            "action": "patrol_upload",
+            "propertyName": document.getElementById('propertyName').value,
+            "rego": regoVal,
+            "make": document.getElementById('make').value,
+            "model": document.getElementById('model').value,
+            "colour": document.getElementById('colour').value,
+            "bodyType": document.getElementById('bodyType').value,
+            "imageBytes": base64Image,
+            "timestamp": new Date().toISOString()
+        };
+
+        try {
+            const response = await fetch(GOOGLE_SCRIPT_URL, {
+                method: "POST",
+                body: JSON.stringify(payload)
+            });
+
+            status.innerText = "Vehicle Logged Successfully!";
+            
+            // Reset form for next car
+            setTimeout(() => {
+                regoInput.value = "";
+                document.getElementById('make').value = "";
+                document.getElementById('model').value = "";
+                document.getElementById('colour').value = "";
+                preview.style.display = "none";
+                cameraInput.value = "";
+                status.innerText = "";
+            }, 2000);
+
+        } catch (err) {
+            status.innerText = "Upload failed. Check connection.";
+            console.error(err);
+        }
+    });
+</script>
+
+</body>
+</html>
