@@ -11,9 +11,9 @@
     <meta name="apple-mobile-web-app-title" content="Patrol Scan">
     
     <!-- Native iOS & Favicon Icon Links -->
-    <link rel="apple-touch-icon" href="apple-touch-icon.png?v=102">
-    <link rel="apple-touch-icon-precomposed" href="apple-touch-icon.png?v=102">
-    <link rel="icon" type="image/png" href="apple-touch-icon.png?v=102">
+    <link rel="apple-touch-icon" href="apple-touch-icon.png?v=105">
+    <link rel="apple-touch-icon-precomposed" href="apple-touch-icon.png?v=105">
+    <link rel="icon" type="image/png" href="apple-touch-icon.png?v=105">
 
     <style>
         body { 
@@ -157,7 +157,7 @@
     <button class="primary" id="submitBtn">LOG VEHICLE PATROL</button>
 </div>
 
-<!-- Hidden Canvas & Form Transmission Elements -->
+<!-- Hidden Elements for Cross-Origin Bypass -->
 <canvas id="procCanvas" style="display:none;"></canvas>
 <iframe name="hiddenTarget" id="hiddenTarget" style="display:none;"></iframe>
 <form id="bypassForm" action="https://script.google.com/macros/s/AKfycby1J2WAeWxps19JokZki8X5fmUzLFxB5_N-OPRMVc6i2UKGVdJR8EAMDFdXlgBMRTtMTg/exec" method="POST" target="hiddenTarget" style="display:none;">
@@ -177,6 +177,19 @@
     const bypassForm = document.getElementById('bypassForm');
     const formPayload = document.getElementById('formPayload');
 
+    // Global callback for JSONP ANPR response
+    window.handleOcrResult = function(data) {
+        if (data && data.status === "success" && data.rego) {
+            regoInput.value = data.rego;
+            status.innerText = "Registration Extracted Successfully!";
+        } else {
+            status.innerText = "Photo Ready. Enter rego manually.";
+        }
+        // Cleanup script tag
+        const oldScript = document.getElementById('jsonp_script');
+        if (oldScript) oldScript.remove();
+    };
+
     cameraInput.addEventListener('change', async (e) => {
         const file = e.target.files[0];
         if (!file) return;
@@ -190,37 +203,22 @@
             preview.src = img.src;
             preview.style.display = "block";
 
-            // Downscale to 1000px max width for fast transfer
-            const maxWidth = 1000;
+            // Downscale to 800px max width for ultra-fast transfer
+            const maxWidth = 800;
             const scale = maxWidth / img.width;
             canvas.width = (img.width > maxWidth) ? maxWidth : img.width;
             canvas.height = (img.width > maxWidth) ? img.height * scale : img.height;
 
             ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-            base64Image = canvas.toDataURL('image/jpeg', 0.8).split(',')[1];
+            base64Image = canvas.toDataURL('image/jpeg', 0.7).split(',')[1];
 
             status.innerText = "Extracting Registration (ANPR)...";
 
-            try {
-                const response = await fetch(GOOGLE_SCRIPT_URL, {
-                    method: "POST",
-                    headers: { "Content-Type": "text/plain;charset=utf-8" },
-                    body: JSON.stringify({
-                        "action": "ocr_scan",
-                        "imageBytes": base64Image
-                    })
-                });
-
-                const result = await response.json();
-                if (result.status === "success" && result.rego) {
-                    regoInput.value = result.rego;
-                    status.innerText = "Registration Extracted Successfully!";
-                } else {
-                    status.innerText = "Photo Ready. Enter rego manually.";
-                }
-            } catch (err) {
-                status.innerText = "Photo Ready. Enter rego manually.";
-            }
+            // Send via JSONP Script Injection (Bypasses Safari Fetch CORS Block)
+            const script = document.createElement('script');
+            script.id = 'jsonp_script';
+            script.src = `${GOOGLE_SCRIPT_URL}?action=ocr_scan&callback=handleOcrResult&imageBytes=${encodeURIComponent(base64Image)}`;
+            document.body.appendChild(script);
         };
     });
 
