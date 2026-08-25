@@ -9,9 +9,9 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="Patrol Scan">
     
-    <link rel="apple-touch-icon" href="apple-touch-icon.png?v=170">
-    <link rel="apple-touch-icon-precomposed" href="apple-touch-icon.png?v=170">
-    <link rel="icon" type="image/png" href="apple-touch-icon.png?v=170">
+    <link rel="apple-touch-icon" href="apple-touch-icon.png?v=180">
+    <link rel="apple-touch-icon-precomposed" href="apple-touch-icon.png?v=180">
+    <link rel="icon" type="image/png" href="apple-touch-icon.png?v=180">
 
     <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
 
@@ -124,7 +124,7 @@
     <div id="status"></div>
 
     <label>Last Scanned Rego</label>
-    <input type="text" id="rego" placeholder="SCANNING..." style="text-transform: uppercase; font-weight: bold; font-size: 28px; text-align: center; color: #00e676; letter-spacing: 2px;" readonly>
+    <input type="text" id="rego" placeholder="SCANNING..." style="text-transform: uppercase; font-weight: bold; font-size: 28px; text-align: center; color: #00e676; letter-spacing: 2px;">
 </div>
 
 <canvas id="procCanvas" style="display:none;"></canvas>
@@ -170,7 +170,7 @@
                         gpsStatus.innerText = `GPS Locked: ${matchedProp.name}`;
                     } else {
                         propertyInput.placeholder = "Enter Property Name...";
-                        gpsStatus.innerText = "GPS Active: Enter location manually if needed";
+                        gpsStatus.innerText = "GPS Active: Enter location manually";
                     }
                 });
             }
@@ -190,6 +190,47 @@
         return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
     }
 
+    // High-Contrast Adaptive Threshold Filter
+    function preprocessImage(cCtx, width, height) {
+        const imgData = cCtx.getImageData(0, 0, width, height);
+        const data = imgData.data;
+        for (let i = 0; i < data.length; i += 4) {
+            const avg = (data[i] + data[i + 1] + data[i + 2]) / 3;
+            const v = (avg > 110) ? 255 : 0; // Pure Black or Pure White
+            data[i] = v;
+            data[i + 1] = v;
+            data[i + 2] = v;
+        }
+        cCtx.putImageData(imgData, 0, 0);
+    }
+
+    // Strict Australian Plate Syntax Evaluator
+    function evaluateRegoSyntax(rawText) {
+        if (!rawText) return { rego: "UNREADABLE", confidence: "LOW" };
+        
+        const matches = rawText.toUpperCase().match(/[A-Z0-9]{3,7}/g);
+        if (!matches) return { rego: "UNREADABLE", confidence: "LOW" };
+
+        const filtered = matches.filter(m => 
+            !["QUEENSLAND", "SUNSHINE", "STATE", "PATROL", "SCANNER", "CAMRY", "TOYOTA", "HYUNDAI"].includes(m)
+        );
+
+        if (filtered.length === 0) return { rego: "UNREADABLE", confidence: "LOW" };
+
+        // Look for valid AU structures (Length 5-7 with mixed alphanumeric characters)
+        const bestCandidate = filtered.find(m => 
+            m.length >= 5 && m.length <= 7 && /[A-Z]/.test(m) && /[0-9]/.test(m)
+        );
+
+        if (bestCandidate) {
+            return { rego: bestCandidate, confidence: "HIGH" };
+        } else if (filtered[0].length >= 3) {
+            return { rego: filtered[0], confidence: "LOW" };
+        }
+
+        return { rego: "UNREADABLE", confidence: "LOW" };
+    }
+
     cameraInput.addEventListener('change', async (e) => {
         const file = e.target.files[0];
         if (!file) return;
@@ -200,47 +241,54 @@
         img.src = URL.createObjectURL(file);
 
         img.onload = async () => {
-            const maxWidth = 800;
+            const maxWidth = 1000;
             const scale = maxWidth / img.width;
             canvas.width = (img.width > maxWidth) ? maxWidth : img.width;
             canvas.height = (img.width > maxWidth) ? img.height * scale : img.height;
 
             ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-            const base64Image = canvas.toDataURL('image/jpeg', 0.75).split(',')[1];
+            const base64Image = canvas.toDataURL('image/jpeg', 0.8).split(',')[1];
 
-            // Fast local OCR pass
-            let detectedRego = "UNKNOWN";
+            // 1. First Pass: Pre-processed Crop
+            cropCanvas.width = canvas.width * 0.8;
+            cropCanvas.height = canvas.height * 0.5;
+            cropCtx.drawImage(canvas, canvas.width * 0.1, canvas.height * 0.35, cropCanvas.width, cropCanvas.height, 0, 0, cropCanvas.width, cropCanvas.height);
+            preprocessImage(cropCtx, cropCanvas.width, cropCanvas.height);
+
+            let scanResult = { rego: "UNREADABLE", confidence: "LOW" };
+
             try {
-                cropCanvas.width = canvas.width * 0.8;
-                cropCanvas.height = canvas.height * 0.6;
-                cropCtx.drawImage(canvas, canvas.width * 0.1, canvas.height * 0.3, cropCanvas.width, cropCanvas.height, 0, 0, cropCanvas.width, cropCanvas.height);
-
                 const worker = await Tesseract.createWorker('eng');
                 await worker.setParameters({ tessedit_char_whitelist: 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789' });
+                
                 const { data: { text } } = await worker.recognize(cropCanvas);
-                await worker.terminate();
+                scanResult = evaluateRegoSyntax(text);
 
-                const matches = text.toUpperCase().match(/[A-Z0-9]{3,7}/g);
-                if (matches) {
-                    const filtered = matches.filter(m => !["QUEENSLAND", "SUNSHINE", "STATE"].includes(m));
-                    detectedRego = filtered.find(m => /[A-Z]/.test(m) && /[0-9]/.test(m)) || filtered[0] || "UNKNOWN";
+                // Fallback Pass: Unfiltered full image if cropped pass confidence is LOW
+                if (scanResult.confidence === "LOW") {
+                    const fullPass = await worker.recognize(canvas);
+                    const fallbackResult = evaluateRegoSyntax(fullPass.data.text);
+                    if (fallbackResult.confidence === "HIGH") {
+                        scanResult = fallbackResult;
+                    }
                 }
+                await worker.terminate();
             } catch (err) {}
 
-            regoInput.value = detectedRego;
+            regoInput.value = scanResult.rego;
 
-            // Auto-Submit Log Entry
+            // Submit Log Payload with Real Evaluated Confidence
             const payloadObj = {
                 "action": "patrol_upload",
                 "propertyName": propertyInput.value || "GENERAL",
-                "rego": detectedRego,
+                "rego": scanResult.rego,
+                "confidence": scanResult.confidence,
                 "imageBytes": base64Image
             };
 
             formPayload.value = JSON.stringify(payloadObj);
             bypassForm.submit();
 
-            // Instant "Marked" confirmation
             status.innerText = "Marked!";
             
             setTimeout(() => {
