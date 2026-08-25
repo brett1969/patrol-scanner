@@ -3,16 +3,16 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>National Towing - Fast Patrol Scanner</title>
+    <title>National Towing - Patrol Marker</title>
     
     <!-- iOS PWA Directives -->
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="Patrol Scan">
     
-    <link rel="apple-touch-icon" href="apple-touch-icon.png?v=150">
-    <link rel="apple-touch-icon-precomposed" href="apple-touch-icon.png?v=150">
-    <link rel="icon" type="image/png" href="apple-touch-icon.png?v=150">
+    <link rel="apple-touch-icon" href="apple-touch-icon.png?v=160">
+    <link rel="apple-touch-icon-precomposed" href="apple-touch-icon.png?v=160">
+    <link rel="icon" type="image/png" href="apple-touch-icon.png?v=160">
 
     <!-- Fast Client-Side OCR Engine -->
     <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
@@ -21,7 +21,7 @@
         body { 
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; 
             margin: 0; 
-            padding: 12px; 
+            padding: 16px; 
             background: #121212; 
             color: #fff; 
             -webkit-user-select: none;
@@ -29,7 +29,7 @@
         .card { 
             background: #1e1e1e; 
             border-radius: 14px; 
-            padding: 16px; 
+            padding: 20px; 
             box-shadow: 0 4px 15px rgba(0,0,0,0.6); 
             border: 1px solid #2a2a2a;
         }
@@ -37,76 +37,76 @@
             margin-top: 0; 
             color: #00e676; 
             text-align: center; 
-            font-size: 18px;
+            font-size: 20px;
             letter-spacing: 1px;
-            margin-bottom: 8px;
+            margin-bottom: 6px;
         }
         label { 
             font-size: 11px; 
             text-transform: uppercase; 
             color: #888; 
             display: block; 
-            margin-top: 10px; 
+            margin-top: 14px; 
             font-weight: 600;
         }
-        input, select, button { 
+        input, button { 
             width: 100%; 
-            padding: 12px; 
+            padding: 14px; 
             border-radius: 10px; 
             border: 1px solid #333; 
             background: #2a2a2a; 
             color: #fff; 
             font-size: 16px; 
             box-sizing: border-box; 
-            margin-top: 4px; 
+            margin-top: 6px; 
             outline: none;
         }
+        input:focus { border-color: #00e676; }
         button.primary { 
             background: #00e676; 
             color: #000; 
             font-weight: bold; 
             border: none; 
-            margin-top: 14px; 
+            margin-top: 20px; 
             cursor: pointer; 
-            font-size: 18px;
-            padding: 16px;
+            font-size: 20px;
+            padding: 18px;
             box-shadow: 0 4px 10px rgba(0, 230, 118, 0.3);
         }
         button.primary:active { transform: scale(0.98); }
         #preview { 
             width: 100%; 
-            max-height: 180px; 
+            max-height: 220px; 
             object-fit: cover; 
             border-radius: 10px; 
             display: none; 
-            margin-top: 8px; 
+            margin-top: 12px; 
             border: 2px solid #00e676;
         }
         #status { 
             text-align: center; 
             font-size: 13px; 
             color: #ffab00; 
-            margin-top: 8px; 
+            margin-top: 10px; 
             font-weight: 600;
         }
         .gps-badge {
-            font-size: 11px;
+            font-size: 12px;
             color: #00e676;
             text-align: center;
-            margin-bottom: 8px;
+            margin-bottom: 10px;
+            font-weight: 500;
         }
     </style>
 </head>
 <body>
 
 <div class="card">
-    <h2>FAST PATROL MARKER</h2>
+    <h2>NIGHT PATROL MARKER</h2>
     <div id="gpsStatus" class="gps-badge">Locating Property via GPS...</div>
     
     <label>Location / Property</label>
-    <select id="propertyName">
-        <option value="GENERAL">Detecting location...</option>
-    </select>
+    <input type="text" id="propertyName" placeholder="Detecting location..." style="font-weight: 600; color: #00e676;">
 
     <label>Capture Vehicle Photo</label>
     <input type="file" id="cameraInput" accept="image/*" capture="environment">
@@ -115,9 +115,9 @@
     <div id="status"></div>
 
     <label>Vehicle Registration (ANPR)</label>
-    <input type="text" id="rego" placeholder="SCANNING..." style="text-transform: uppercase; font-weight: bold; font-size: 24px; text-align: center; color: #00e676; letter-spacing: 2px;">
+    <input type="text" id="rego" placeholder="e.g. 719LL3" style="text-transform: uppercase; font-weight: bold; font-size: 26px; text-align: center; color: #00e676; letter-spacing: 2px;">
 
-    <button class="primary" id="submitBtn">MARK VEHICLE PATROL</button>
+    <button class="primary" id="submitBtn">MARK PATROL ENTRY</button>
 </div>
 
 <canvas id="procCanvas" style="display:none;"></canvas>
@@ -137,7 +137,7 @@
     const status = document.getElementById('status');
     const gpsStatus = document.getElementById('gpsStatus');
     const regoInput = document.getElementById('rego');
-    const propertySelect = document.getElementById('propertyName');
+    const propertyInput = document.getElementById('propertyName');
     const canvas = document.getElementById('procCanvas');
     const cropCanvas = document.getElementById('cropCanvas');
     const ctx = canvas.getContext('2d');
@@ -145,19 +145,11 @@
     const bypassForm = document.getElementById('bypassForm');
     const formPayload = document.getElementById('formPayload');
 
-    // 1. INITIALIZE & AUTO-MATCH PROPERTY VIA GEOLOCATION
+    // AUTO-MATCH PROPERTY VIA GEOLOCATION
     window.addEventListener('load', async () => {
         try {
             const res = await fetch(`${GOOGLE_SCRIPT_URL}?action=get_properties`);
             propertyDatabase = await res.json();
-            
-            propertySelect.innerHTML = '<option value="GENERAL">Select Property...</option>';
-            propertyDatabase.forEach(p => {
-                const opt = document.createElement('option');
-                opt.value = p.name;
-                opt.innerText = p.name;
-                propertySelect.appendChild(opt);
-            });
 
             if (navigator.geolocation) {
                 navigator.geolocation.getCurrentPosition(position => {
@@ -171,21 +163,23 @@
                     });
 
                     if (matchedProp) {
-                        propertySelect.value = matchedProp.name;
+                        propertyInput.value = matchedProp.name;
                         gpsStatus.innerText = `GPS Locked: ${matchedProp.name}`;
                     } else {
-                        gpsStatus.innerText = "GPS Active: Manual Property Selection Required";
+                        propertyInput.placeholder = "Enter Property Name...";
+                        gpsStatus.innerText = "GPS Active: Enter location manually if needed";
                     }
                 }, () => {
-                    gpsStatus.innerText = "GPS Unavailable: Select Property Manually";
+                    propertyInput.placeholder = "Enter Property Name...";
+                    gpsStatus.innerText = "GPS Disabled: Enter location manually";
                 });
             }
         } catch(e) {
-            gpsStatus.innerText = "Manual Property Selection Mode";
+            propertyInput.placeholder = "Enter Property Name...";
+            gpsStatus.innerText = "Location Offline: Manual Mode";
         }
     });
 
-    // Haversine Distance Calculation (Meters)
     function getDistanceMeters(lat1, lon1, lat2, lon2) {
         const R = 6371e3;
         const dLat = (lat2 - lat1) * Math.PI / 180;
@@ -196,12 +190,12 @@
         return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
     }
 
-    // 2. FAST PHOTO CAPTURE & ANPR
+    // PHOTO CAPTURE & FAST ANPR
     cameraInput.addEventListener('change', async (e) => {
         const file = e.target.files[0];
         if (!file) return;
 
-        status.innerText = "Scanning Rego...";
+        status.innerText = "Reading Rego...";
 
         const img = new Image();
         img.src = URL.createObjectURL(file);
@@ -218,7 +212,7 @@
             ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
             base64Image = canvas.toDataURL('image/jpeg', 0.75).split(',')[1];
 
-            // Crop plate region & threshold for OCR
+            // Crop plate region
             const cropX = canvas.width * 0.10;
             const cropY = canvas.height * 0.35;
             const cropW = canvas.width * 0.80;
@@ -247,7 +241,7 @@
         };
     });
 
-    // 3. SUBMIT & INSTANT RESET FOR NEXT CAR
+    // SUBMIT & INSTANT RESET
     document.getElementById('submitBtn').addEventListener('click', () => {
         const regoVal = regoInput.value.trim().toUpperCase();
         if (!regoVal) {
@@ -259,7 +253,7 @@
 
         const payloadObj = {
             "action": "patrol_upload",
-            "propertyName": propertySelect.value,
+            "propertyName": propertyInput.value || "GENERAL",
             "rego": regoVal,
             "imageBytes": base64Image
         };
@@ -269,7 +263,6 @@
 
         status.innerText = "LOGGED!";
         
-        // Rapid Reset (Ready for next car in 1 second)
         setTimeout(() => {
             regoInput.value = "";
             preview.style.display = "none";
