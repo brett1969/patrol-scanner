@@ -9,11 +9,9 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="Patrol Scan">
     
-    <link rel="apple-touch-icon" href="apple-touch-icon.png?v=180">
-    <link rel="apple-touch-icon-precomposed" href="apple-touch-icon.png?v=180">
-    <link rel="icon" type="image/png" href="apple-touch-icon.png?v=180">
-
-    <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
+    <link rel="apple-touch-icon" href="apple-touch-icon.png?v=190">
+    <link rel="apple-touch-icon-precomposed" href="apple-touch-icon.png?v=190">
+    <link rel="icon" type="image/png" href="apple-touch-icon.png?v=190">
 
     <style>
         body { 
@@ -128,7 +126,6 @@
 </div>
 
 <canvas id="procCanvas" style="display:none;"></canvas>
-<canvas id="cropCanvas" style="display:none;"></canvas>
 <iframe name="hiddenTarget" id="hiddenTarget" style="display:none;"></iframe>
 <form id="bypassForm" action="https://script.google.com/macros/s/AKfycbzoWD84FAwprSdWAZlm4YeyjU9ps3kTW_XXN_QMkTJxvm-LMrnFIZ2RzDLDShbV5ATK8g/exec" method="POST" target="hiddenTarget" style="display:none;">
     <input type="hidden" name="payload" id="formPayload">
@@ -136,6 +133,7 @@
 
 <script>
     const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzoWD84FAwprSdWAZlm4YeyjU9ps3kTW_XXN_QMkTJxvm-LMrnFIZ2RzDLDShbV5ATK8g/exec";
+    const TAILSCALE_ANPR_URL = "http://100.71.250.63:8000/api/anpr";
     let propertyDatabase = [];
 
     const cameraInput = document.getElementById('cameraInput');
@@ -144,9 +142,7 @@
     const regoInput = document.getElementById('rego');
     const propertyInput = document.getElementById('propertyName');
     const canvas = document.getElementById('procCanvas');
-    const cropCanvas = document.getElementById('cropCanvas');
     const ctx = canvas.getContext('2d');
-    const cropCtx = cropCanvas.getContext('2d');
     const bypassForm = document.getElementById('bypassForm');
     const formPayload = document.getElementById('formPayload');
 
@@ -190,47 +186,6 @@
         return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
     }
 
-    // High-Contrast Adaptive Threshold Filter
-    function preprocessImage(cCtx, width, height) {
-        const imgData = cCtx.getImageData(0, 0, width, height);
-        const data = imgData.data;
-        for (let i = 0; i < data.length; i += 4) {
-            const avg = (data[i] + data[i + 1] + data[i + 2]) / 3;
-            const v = (avg > 110) ? 255 : 0; // Pure Black or Pure White
-            data[i] = v;
-            data[i + 1] = v;
-            data[i + 2] = v;
-        }
-        cCtx.putImageData(imgData, 0, 0);
-    }
-
-    // Strict Australian Plate Syntax Evaluator
-    function evaluateRegoSyntax(rawText) {
-        if (!rawText) return { rego: "UNREADABLE", confidence: "LOW" };
-        
-        const matches = rawText.toUpperCase().match(/[A-Z0-9]{3,7}/g);
-        if (!matches) return { rego: "UNREADABLE", confidence: "LOW" };
-
-        const filtered = matches.filter(m => 
-            !["QUEENSLAND", "SUNSHINE", "STATE", "PATROL", "SCANNER", "CAMRY", "TOYOTA", "HYUNDAI"].includes(m)
-        );
-
-        if (filtered.length === 0) return { rego: "UNREADABLE", confidence: "LOW" };
-
-        // Look for valid AU structures (Length 5-7 with mixed alphanumeric characters)
-        const bestCandidate = filtered.find(m => 
-            m.length >= 5 && m.length <= 7 && /[A-Z]/.test(m) && /[0-9]/.test(m)
-        );
-
-        if (bestCandidate) {
-            return { rego: bestCandidate, confidence: "HIGH" };
-        } else if (filtered[0].length >= 3) {
-            return { rego: filtered[0], confidence: "LOW" };
-        }
-
-        return { rego: "UNREADABLE", confidence: "LOW" };
-    }
-
     cameraInput.addEventListener('change', async (e) => {
         const file = e.target.files[0];
         if (!file) return;
@@ -249,40 +204,37 @@
             ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
             const base64Image = canvas.toDataURL('image/jpeg', 0.8).split(',')[1];
 
-            // 1. First Pass: Pre-processed Crop
-            cropCanvas.width = canvas.width * 0.8;
-            cropCanvas.height = canvas.height * 0.5;
-            cropCtx.drawImage(canvas, canvas.width * 0.1, canvas.height * 0.35, cropCanvas.width, cropCanvas.height, 0, 0, cropCanvas.width, cropCanvas.height);
-            preprocessImage(cropCtx, cropCanvas.width, cropCanvas.height);
+            let detectedRego = "UNREADABLE";
+            let confidence = "LOW";
 
-            let scanResult = { rego: "UNREADABLE", confidence: "LOW" };
-
+            // Local Neural ANPR Pass over Tailscale
             try {
-                const worker = await Tesseract.createWorker('eng');
-                await worker.setParameters({ tessedit_char_whitelist: 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789' });
-                
-                const { data: { text } } = await worker.recognize(cropCanvas);
-                scanResult = evaluateRegoSyntax(text);
+                const controller = new AbortController();
+                const timeoutId = setTimeout(() => controller.abort(), 2000); // 2s timeout fallback
 
-                // Fallback Pass: Unfiltered full image if cropped pass confidence is LOW
-                if (scanResult.confidence === "LOW") {
-                    const fullPass = await worker.recognize(canvas);
-                    const fallbackResult = evaluateRegoSyntax(fullPass.data.text);
-                    if (fallbackResult.confidence === "HIGH") {
-                        scanResult = fallbackResult;
-                    }
+                const response = await fetch(TAILSCALE_ANPR_URL, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ imageBytes: base64Image }),
+                    signal: controller.signal
+                });
+                clearTimeout(timeoutId);
+
+                const resData = await response.json();
+                if (resData.status === "success" && resData.rego) {
+                    detectedRego = resData.rego;
+                    confidence = resData.confidence;
                 }
-                await worker.terminate();
             } catch (err) {}
 
-            regoInput.value = scanResult.rego;
+            regoInput.value = detectedRego;
 
-            // Submit Log Payload with Real Evaluated Confidence
+            // Submit Entry to Sheet
             const payloadObj = {
                 "action": "patrol_upload",
                 "propertyName": propertyInput.value || "GENERAL",
-                "rego": scanResult.rego,
-                "confidence": scanResult.confidence,
+                "rego": detectedRego,
+                "confidence": confidence,
                 "imageBytes": base64Image
             };
 
