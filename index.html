@@ -10,9 +10,9 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="Patrol Scan">
     
-    <link rel="apple-touch-icon" href="apple-touch-icon.png?v=200">
-    <link rel="apple-touch-icon-precomposed" href="apple-touch-icon.png?v=200">
-    <link rel="icon" type="image/png" href="apple-touch-icon.png?v=200">
+    <link rel="apple-touch-icon" href="apple-touch-icon.png?v=210">
+    <link rel="apple-touch-icon-precomposed" href="apple-touch-icon.png?v=210">
+    <link rel="icon" type="image/png" href="apple-touch-icon.png?v=210">
 
     <style>
         body { 
@@ -147,7 +147,7 @@
     const bypassForm = document.getElementById('bypassForm');
     const formPayload = document.getElementById('formPayload');
 
-    // 1. AUTO-DETECT PROPERTY VIA GPS
+    // 1. AUTO-MATCH PROPERTY VIA GPS
     window.addEventListener('load', async () => {
         try {
             const res = await fetch(`${GOOGLE_SCRIPT_URL}?action=get_properties`);
@@ -210,18 +210,13 @@
             let detectedRego = "UNREADABLE";
             let confidence = "LOW";
 
-            // Local Neural ANPR Pass via Python Tailscale Endpoint
+            // Local Neural ANPR Pass via Python Tailscale Endpoint (CORS Bypassed)
             try {
-                const controller = new AbortController();
-                const timeoutId = setTimeout(() => controller.abort(), 2500); // 2.5s fallback timeout
-
                 const response = await fetch(TAILSCALE_ANPR_URL, {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ imageBytes: base64Image }),
-                    signal: controller.signal
+                    headers: { 'Content-Type': 'text/plain' },
+                    body: JSON.stringify({ imageBytes: base64Image })
                 });
-                clearTimeout(timeoutId);
 
                 const resData = await response.json();
                 if (resData.status === "success" && resData.rego) {
