@@ -10,9 +10,9 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="Patrol Scan">
     
-    <link rel="apple-touch-icon" href="apple-touch-icon.png?v=320">
-    <link rel="apple-touch-icon-precomposed" href="apple-touch-icon.png?v=320">
-    <link rel="icon" type="image/png" href="apple-touch-icon.png?v=320">
+    <link rel="apple-touch-icon" href="apple-touch-icon.png?v=330">
+    <link rel="apple-touch-icon-precomposed" href="apple-touch-icon.png?v=330">
+    <link rel="icon" type="image/png" href="apple-touch-icon.png?v=330">
 
     <style>
         body { 
@@ -122,15 +122,18 @@
 
     <div id="status"></div>
 
-    <label>Scanned Plate Result</label>
+    <label>Last Scanned Rego</label>
     <input type="text" id="rego" placeholder="READY FOR SNAP" style="text-transform: uppercase; font-weight: bold; font-size: 32px; text-align: center; color: #00e676; letter-spacing: 2px;" readonly>
 </div>
 
 <canvas id="procCanvas" style="display:none;"></canvas>
+<iframe name="hiddenTarget" id="hiddenTarget" style="display:none;"></iframe>
+<form id="bypassForm" action="https://script.google.com/macros/s/AKfycbzoWD84FAwprSdWAZlm4YeyjU9ps3kTW_XXN_QMkTJxvm-LMrnFIZ2RzDLDShbV5ATK8g/exec" method="POST" target="hiddenTarget" style="display:none;">
+    <input type="hidden" name="payload" id="formPayload">
+</form>
 
 <script>
     const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzoWD84FAwprSdWAZlm4YeyjU9ps3kTW_XXN_QMkTJxvm-LMrnFIZ2RzDLDShbV5ATK8g/exec";
-    const TAILSCALE_ANPR_URL = "http://100.71.250.63:8000/api/anpr";
     let propertyDatabase = [];
 
     const cameraInput = document.getElementById('cameraInput');
@@ -140,6 +143,8 @@
     const propertyInput = document.getElementById('propertyName');
     const canvas = document.getElementById('procCanvas');
     const ctx = canvas.getContext('2d');
+    const bypassForm = document.getElementById('bypassForm');
+    const formPayload = document.getElementById('formPayload');
 
     // 1. AUTO-MATCH PROPERTY VIA GPS
     window.addEventListener('load', async () => {
@@ -170,7 +175,20 @@
             propertyInput.placeholder = "Enter Property Name...";
             gpsStatus.innerText = "Location Offline";
         }
+
+        // Auto-poll Google Sheets for calculated rego every 2 seconds
+        setInterval(fetchLastRego, 2000);
     });
+
+    async function fetchLastRego() {
+        try {
+            const res = await fetch(`${GOOGLE_SCRIPT_URL}?action=get_last_rego`);
+            const data = await res.json();
+            if (data && data.rego) {
+                regoInput.value = data.rego;
+            }
+        } catch(e) {}
+    }
 
     function getDistanceMeters(lat1, lon1, lat2, lon2) {
         const R = 6371e3;
@@ -182,13 +200,13 @@
         return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
     }
 
-    // 2. CAPTURE AND PROCESS INSTANTLY OVER TAILSCALE
+    // 2. CAPTURE AND UPLOAD DIRECT TO GOOGLE DRIVE
     cameraInput.addEventListener('change', async (e) => {
         const file = e.target.files[0];
         if (!file) return;
 
-        status.innerText = "⚡ READING PLATE...";
-        regoInput.value = "ANALYZING...";
+        status.innerText = "UPLOADING...";
+        regoInput.value = "PROCESSING...";
 
         const img = new Image();
         img.src = URL.createObjectURL(file);
@@ -202,33 +220,21 @@
             ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
             const base64Image = canvas.toDataURL('image/jpeg', 0.80).split(',')[1];
 
-            try {
-                const response = await fetch(TAILSCALE_ANPR_URL, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'text/plain' },
-                    body: JSON.stringify({
-                        "imageBytes": base64Image,
-                        "propertyName": propertyInput.value || "GENERAL"
-                    })
-                });
+            const payloadObj = {
+                "action": "patrol_upload",
+                "propertyName": propertyInput.value || "GENERAL",
+                "imageBytes": base64Image
+            };
 
-                const resData = await response.json();
-                if (resData.status === "success" && resData.rego) {
-                    regoInput.value = resData.rego;
-                    status.innerText = `✔ MARKED (${resData.time}s)`;
-                } else {
-                    regoInput.value = "UNREADABLE";
-                    status.innerText = "MARKED (CHECK PLATE)";
-                }
-            } catch (err) {
-                regoInput.value = "UNREADABLE";
-                status.innerText = "MARKED (OFFLINE)";
-            }
+            formPayload.value = JSON.stringify(payloadObj);
+            bypassForm.submit();
 
+            status.innerText = "MARKED!";
+            
             setTimeout(() => {
                 status.innerText = "";
                 cameraInput.value = "";
-            }, 3000);
+            }, 1500);
         };
     });
 </script>
