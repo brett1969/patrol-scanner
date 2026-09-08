@@ -10,9 +10,9 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="Patrol Scan">
     
-    <link rel="apple-touch-icon" href="apple-touch-icon.png?v=300">
-    <link rel="apple-touch-icon-precomposed" href="apple-touch-icon.png?v=300">
-    <link rel="icon" type="image/png" href="apple-touch-icon.png?v=300">
+    <link rel="apple-touch-icon" href="apple-touch-icon.png?v=310">
+    <link rel="apple-touch-icon-precomposed" href="apple-touch-icon.png?v=310">
+    <link rel="icon" type="image/png" href="apple-touch-icon.png?v=310">
 
     <style>
         body { 
@@ -121,6 +121,9 @@
     </div>
 
     <div id="status"></div>
+
+    <label>Last Scanned Rego</label>
+    <input type="text" id="rego" placeholder="SCANNING..." style="text-transform: uppercase; font-weight: bold; font-size: 28px; text-align: center; color: #00e676; letter-spacing: 2px;" readonly>
 </div>
 
 <canvas id="procCanvas" style="display:none;"></canvas>
@@ -136,6 +139,7 @@
     const cameraInput = document.getElementById('cameraInput');
     const status = document.getElementById('status');
     const gpsStatus = document.getElementById('gpsStatus');
+    const regoInput = document.getElementById('rego');
     const propertyInput = document.getElementById('propertyName');
     const canvas = document.getElementById('procCanvas');
     const ctx = canvas.getContext('2d');
@@ -171,7 +175,20 @@
             propertyInput.placeholder = "Enter Property Name...";
             gpsStatus.innerText = "Location Offline";
         }
+
+        // Poll for latest scanned rego every 2 seconds
+        setInterval(fetchLastRego, 2000);
     });
+
+    async function fetchLastRego() {
+        try {
+            const res = await fetch(`${GOOGLE_SCRIPT_URL}?action=get_last_rego`);
+            const data = await res.json();
+            if (data && data.rego) {
+                regoInput.value = data.rego;
+            }
+        } catch(e) {}
+    }
 
     function getDistanceMeters(lat1, lon1, lat2, lon2) {
         const R = 6371e3;
@@ -189,6 +206,7 @@
         if (!file) return;
 
         status.innerText = "Uploading...";
+        regoInput.value = "PROCESSING...";
 
         const img = new Image();
         img.src = URL.createObjectURL(file);
