@@ -5,13 +5,14 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>National Towing - Patrol Marker</title>
     
+    <!-- iOS PWA Directives -->
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="Patrol Scan">
     
-    <link rel="apple-touch-icon" href="apple-touch-icon.png?v=190">
-    <link rel="apple-touch-icon-precomposed" href="apple-touch-icon.png?v=190">
-    <link rel="icon" type="image/png" href="apple-touch-icon.png?v=190">
+    <link rel="apple-touch-icon" href="apple-touch-icon.png?v=200">
+    <link rel="apple-touch-icon-precomposed" href="apple-touch-icon.png?v=200">
+    <link rel="icon" type="image/png" href="apple-touch-icon.png?v=200">
 
     <style>
         body { 
@@ -122,7 +123,7 @@
     <div id="status"></div>
 
     <label>Last Scanned Rego</label>
-    <input type="text" id="rego" placeholder="SCANNING..." style="text-transform: uppercase; font-weight: bold; font-size: 28px; text-align: center; color: #00e676; letter-spacing: 2px;">
+    <input type="text" id="rego" placeholder="SCANNING..." style="text-transform: uppercase; font-weight: bold; font-size: 28px; text-align: center; color: #00e676; letter-spacing: 2px;" readonly>
 </div>
 
 <canvas id="procCanvas" style="display:none;"></canvas>
@@ -146,6 +147,7 @@
     const bypassForm = document.getElementById('bypassForm');
     const formPayload = document.getElementById('formPayload');
 
+    // 1. AUTO-DETECT PROPERTY VIA GPS
     window.addEventListener('load', async () => {
         try {
             const res = await fetch(`${GOOGLE_SCRIPT_URL}?action=get_properties`);
@@ -186,6 +188,7 @@
         return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
     }
 
+    // 2. CAPTURE, PROCESS ANPR OVER TAILSCALE, AND LOG
     cameraInput.addEventListener('change', async (e) => {
         const file = e.target.files[0];
         if (!file) return;
@@ -207,10 +210,10 @@
             let detectedRego = "UNREADABLE";
             let confidence = "LOW";
 
-            // Local Neural ANPR Pass over Tailscale
+            // Local Neural ANPR Pass via Python Tailscale Endpoint
             try {
                 const controller = new AbortController();
-                const timeoutId = setTimeout(() => controller.abort(), 2000); // 2s timeout fallback
+                const timeoutId = setTimeout(() => controller.abort(), 2500); // 2.5s fallback timeout
 
                 const response = await fetch(TAILSCALE_ANPR_URL, {
                     method: 'POST',
@@ -229,7 +232,7 @@
 
             regoInput.value = detectedRego;
 
-            // Submit Entry to Sheet
+            // Submit Log Payload to Google Apps Script
             const payloadObj = {
                 "action": "patrol_upload",
                 "propertyName": propertyInput.value || "GENERAL",
