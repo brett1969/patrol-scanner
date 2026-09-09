@@ -10,9 +10,9 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="Patrol Scan">
     
-    <link rel="apple-touch-icon" href="apple-touch-icon.png?v=350">
-    <link rel="apple-touch-icon-precomposed" href="apple-touch-icon.png?v=350">
-    <link rel="icon" type="image/png" href="apple-touch-icon.png?v=350">
+    <link rel="apple-touch-icon" href="apple-touch-icon.png?v=360">
+    <link rel="apple-touch-icon-precomposed" href="apple-touch-icon.png?v=360">
+    <link rel="icon" type="image/png" href="apple-touch-icon.png?v=360">
 
     <style>
         body { 
@@ -176,7 +176,7 @@
             gpsStatus.innerText = "Location Offline";
         }
 
-        // Fast 1-second polling loop for rego results
+        // Fast background poll for refined Python OCR results
         setInterval(fetchLastRego, 1000);
     });
 
@@ -184,7 +184,7 @@
         try {
             const res = await fetch(`${GOOGLE_SCRIPT_URL}?action=get_last_rego`);
             const data = await res.json();
-            if (data && data.rego) {
+            if (data && data.rego && data.rego !== "PENDING") {
                 regoInput.value = data.rego;
             }
         } catch(e) {}
@@ -200,26 +200,25 @@
         return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
     }
 
-    // 2. CAPTURE AND HIGH-SPEED UPLOAD DIRECT TO GOOGLE DRIVE
+    // 2. INSTANT CAPTURE AND HIGH-SPEED UPLOAD
     cameraInput.addEventListener('change', async (e) => {
         const file = e.target.files[0];
         if (!file) return;
 
-        status.innerText = "UPLOADING...";
+        status.innerText = "SAVING PATROL...";
         regoInput.value = "READING PLATE...";
 
         const img = new Image();
         img.src = URL.createObjectURL(file);
 
         img.onload = async () => {
-            // Compress image to 800px width for fast 1s transfer
-            const maxWidth = 800;
+            const maxWidth = 1000;
             const scale = maxWidth / img.width;
             canvas.width = (img.width > maxWidth) ? maxWidth : img.width;
             canvas.height = (img.width > maxWidth) ? img.height * scale : img.height;
 
             ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-            const base64Image = canvas.toDataURL('image/jpeg', 0.75).split(',')[1];
+            const base64Image = canvas.toDataURL('image/jpeg', 0.85).split(',')[1];
 
             const payloadObj = {
                 "action": "patrol_upload",
