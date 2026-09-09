@@ -17,73 +17,85 @@
             flex-direction: column;
             align-items: center;
             min-height: 100vh;
+            -webkit-user-select: none;
         }
         .header {
             text-align: center;
             margin-top: 10px;
-            margin-bottom: 20px;
+            margin-bottom: 24px;
         }
         .header h1 {
             margin: 0;
-            font-size: 28px;
+            font-size: 34px;
             font-weight: 900;
             color: #00e676;
             letter-spacing: 2px;
         }
         .card {
             background: #1e1e1e;
-            border-radius: 16px;
-            padding: 20px;
+            border-radius: 18px;
+            padding: 24px;
             width: 100%;
-            max-width: 420px;
+            max-width: 440px;
             border: 1px solid #2a2a2a;
             box-shadow: 0 6px 20px rgba(0,0,0,0.6);
         }
         label {
-            font-size: 11px;
+            font-size: 14px;
             text-transform: uppercase;
-            color: #888;
+            color: #aaa;
             display: block;
-            margin-top: 14px;
-            font-weight: 700;
+            margin-top: 18px;
+            font-weight: 800;
+            letter-spacing: 1px;
         }
         input, select {
             width: 100%;
-            padding: 14px;
-            border-radius: 10px;
+            height: 58px;
+            padding: 0 16px;
+            border-radius: 12px;
             border: 1px solid #333;
             background: #2a2a2a;
             color: #fff;
-            font-size: 16px;
-            margin-top: 6px;
+            font-size: 20px;
+            font-weight: 700;
+            margin-top: 8px;
             outline: none;
             box-sizing: border-box;
+            appearance: none;
+            -webkit-appearance: none;
+        }
+        input[type="date"] {
+            color-scheme: dark;
+            font-family: inherit;
         }
         input[type="text"] {
             text-transform: uppercase;
-            font-weight: 700;
-            letter-spacing: 1px;
+            letter-spacing: 2px;
+            color: #00e676;
+            font-size: 22px;
         }
         .submit-btn {
             background: #00e676;
             color: #000;
             font-weight: 900;
             border: none;
-            border-radius: 12px;
-            padding: 18px;
-            font-size: 20px;
+            border-radius: 14px;
+            height: 64px;
+            font-size: 24px;
             width: 100%;
-            margin-top: 24px;
+            margin-top: 32px;
             cursor: pointer;
-            box-shadow: 0 4px 15px rgba(0, 230, 118, 0.4);
+            box-shadow: 0 6px 20px rgba(0, 230, 118, 0.4);
+            letter-spacing: 1px;
         }
         .submit-btn:active { transform: scale(0.97); }
         #status {
             text-align: center;
             font-weight: 800;
-            font-size: 16px;
-            margin-top: 16px;
-            min-height: 24px;
+            font-size: 18px;
+            margin-top: 20px;
+            min-height: 28px;
         }
     </style>
 </head>
@@ -96,7 +108,7 @@
 <div class="card">
     <label>Property Name</label>
     <select id="propertyName">
-        <option value="GENERAL PATROL">LOADING PROPERTIES...</option>
+        <option value="" disabled selected>Select Property</option>
     </select>
 
     <label>Vehicle Registration</label>
@@ -108,7 +120,7 @@
     <label>Duration (Days)</label>
     <input type="number" id="duration" value="1" min="1" max="365">
 
-    <button class="submit-btn" id="saveBtn">ISSUE EXEMPTION PASS</button>
+    <button class="submit-btn" id="saveBtn">LOG PASS</button>
     <div id="status"></div>
 </div>
 
@@ -132,13 +144,13 @@
     const today = new Date().toISOString().split('T')[0];
     startDateInput.value = today;
 
-    // Load Properties
+    // Fetch properties and keep "Select Property" as default option
     window.addEventListener('load', async () => {
         try {
             const res = await fetch(`${GOOGLE_SCRIPT_URL}?action=get_properties`);
             const props = await res.json();
             if (props && props.length > 0) {
-                propertySelect.innerHTML = "";
+                propertySelect.innerHTML = '<option value="" disabled selected>Select Property</option>';
                 props.forEach(p => {
                     const opt = document.createElement('option');
                     opt.value = p.name;
@@ -147,12 +159,20 @@
                 });
             }
         } catch(e) {
-            propertySelect.innerHTML = "<option value='GENERAL PATROL'>GENERAL PATROL</option>";
+            propertySelect.innerHTML = '<option value="" disabled selected>Select Property</option>';
         }
     });
 
     saveBtn.addEventListener('click', () => {
+        const propValue = propertySelect.value;
         const rego = regoInput.value.trim().toUpperCase();
+
+        if (!propValue) {
+            statusDiv.style.color = "#ff5252";
+            statusDiv.innerText = "PLEASE SELECT A PROPERTY";
+            return;
+        }
+
         if (!rego) {
             statusDiv.style.color = "#ff5252";
             statusDiv.innerText = "PLEASE ENTER REGISTRATION";
@@ -164,7 +184,7 @@
 
         const payloadObj = {
             "action": "add_pass",
-            "propertyName": propertySelect.value,
+            "propertyName": propValue,
             "rego": rego,
             "startDate": startDateInput.value,
             "duration": durationInput.value
@@ -174,8 +194,9 @@
         bypassForm.submit();
 
         setTimeout(() => {
-            statusDiv.innerText = "✔ EXEMPTION PASS ADDED!";
+            statusDiv.innerText = "✔ EXEMPTION PASS LOGGED!";
             regoInput.value = "";
+            propertySelect.value = "";
             setTimeout(() => { statusDiv.innerText = ""; }, 2500);
         }, 1000);
     });
