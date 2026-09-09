@@ -92,7 +92,6 @@
         input[type="text"] { text-transform: uppercase; color: #00e676; }
         .custom-input { display: none; margin-top: 6px; border-color: #00e676; }
         
-        /* Camera Section */
         .camera-box {
             position: relative;
             width: 100%;
@@ -147,7 +146,7 @@
             letter-spacing: 2px;
         }
         .submit-btn:active { transform: scale(0.97); }
-        #status { text-align: center; font-weight: 800; font-size: 16px; margin-top: 12px; min-height: 24px; }
+        #status { text-align: center; font-weight: 800; font-size: 15px; margin-top: 12px; min-height: 24px; letter-spacing: 0.5px; }
     </style>
 </head>
 <body>
@@ -159,13 +158,13 @@
 <div class="card">
     <div class="rego-banner" id="regoVal">---</div>
 
-    <!-- 1. LOCATION DROPDOWN (PRE-POPULATED OR MASTER FALLBACK) -->
+    <!-- 1. LOCATION -->
     <label>Location (Towed From)</label>
     <select id="locationSelect">
         <option value="" disabled selected>SELECT LOCATION</option>
     </select>
 
-    <!-- 2. MAKE DROPDOWN -->
+    <!-- 2. MAKE -->
     <label>Make</label>
     <select id="makeSelect">
         <option value="" selected>SELECT MAKE</option>
@@ -182,11 +181,11 @@
     </select>
     <input type="text" id="makeCustom" class="custom-input" placeholder="ENTER MAKE">
 
-    <!-- 3. MODEL (FREE TEXT CAPS) -->
+    <!-- 3. MODEL -->
     <label>Model</label>
-    <input type="text" id="modelInput" placeholder="E.G. COROLLA">
+    <input type="text" id="modelInput" placeholder="">
 
-    <!-- 4. COLOUR DROPDOWN -->
+    <!-- 4. COLOUR -->
     <label>Colour</label>
     <select id="colourSelect">
         <option value="White" selected>White</option>
@@ -203,7 +202,7 @@
     </select>
     <input type="text" id="colourCustom" class="custom-input" placeholder="ENTER COLOUR">
 
-    <!-- 5. TYPE DROPDOWN -->
+    <!-- 5. TYPE -->
     <label>Type</label>
     <select id="typeSelect">
         <option value="Car" selected>Car</option>
@@ -216,7 +215,7 @@
     </select>
     <input type="text" id="typeCustom" class="custom-input" placeholder="ENTER TYPE">
 
-    <!-- 6. DRIVER DROPDOWN -->
+    <!-- 6. DRIVER -->
     <label>Driver</label>
     <select id="driverSelect">
         <option value="Brett" selected>Brett</option>
@@ -254,10 +253,12 @@
     const locationSelect = document.getElementById('locationSelect');
     const makeSelect = document.getElementById('makeSelect');
     const makeCustom = document.getElementById('makeCustom');
+    const modelInput = document.getElementById('modelInput');
     const colourSelect = document.getElementById('colourSelect');
     const colourCustom = document.getElementById('colourCustom');
     const typeSelect = document.getElementById('typeSelect');
     const typeCustom = document.getElementById('typeCustom');
+    const driverSelect = document.getElementById('driverSelect');
     const video = document.getElementById('webcam');
     const snapBtn = document.getElementById('snapBtn');
     const photoCountText = document.getElementById('photoCountText');
@@ -273,12 +274,11 @@
     window.addEventListener('load', async () => {
         initCamera();
 
-        // Load property list from Master Log
         try {
             const res = await fetch(`${GOOGLE_SCRIPT_URL}?action=get_properties`);
             const props = await res.json();
             
-            locationSelect.innerHTML = "";
+            locationSelect.innerHTML = '<option value="" disabled selected>SELECT LOCATION</option>';
             let matchFound = false;
 
             props.forEach(p => {
@@ -327,7 +327,6 @@
     colourSelect.addEventListener('change', () => colourCustom.style.display = (colourSelect.value === 'OTHER') ? 'block' : 'none');
     typeSelect.addEventListener('change', () => typeCustom.style.display = (typeSelect.value === 'OTHER') ? 'block' : 'none');
 
-    // Fast shutter tap
     snapBtn.addEventListener('click', () => {
         if (!video.videoWidth) return;
 
@@ -341,29 +340,66 @@
 
         photoCountText.innerText = `✔ ${capturedPhotos.length} PHOTO${capturedPhotos.length > 1 ? 'S' : ''} CAPTURED`;
         
-        // Brief white flash effect on snap
         video.style.opacity = '0.3';
         setTimeout(() => video.style.opacity = '1', 100);
     });
 
     saveBtn.addEventListener('click', () => {
+        const finalLocation = locationSelect.value;
         const finalMake = (makeSelect.value === 'OTHER') ? makeCustom.value.trim() : makeSelect.value;
+        const finalModel = modelInput.value.trim().toUpperCase();
         const finalColour = (colourSelect.value === 'OTHER') ? colourCustom.value.trim() : colourSelect.value;
         const finalType = (typeSelect.value === 'OTHER') ? typeCustom.value.trim() : typeSelect.value;
-        const finalModel = document.getElementById('modelInput').value.trim().toUpperCase();
+        const finalDriver = driverSelect.value;
+
+        if (!finalLocation) {
+            statusDiv.style.color = "#ff5252";
+            statusDiv.innerText = "PLEASE SELECT LOCATION";
+            return;
+        }
+        if (!finalMake) {
+            statusDiv.style.color = "#ff5252";
+            statusDiv.innerText = "PLEASE SELECT / ENTER MAKE";
+            return;
+        }
+        if (!finalModel) {
+            statusDiv.style.color = "#ff5252";
+            statusDiv.innerText = "PLEASE ENTER MODEL";
+            return;
+        }
+        if (!finalColour) {
+            statusDiv.style.color = "#ff5252";
+            statusDiv.innerText = "PLEASE SELECT / ENTER COLOUR";
+            return;
+        }
+        if (!finalType) {
+            statusDiv.style.color = "#ff5252";
+            statusDiv.innerText = "PLEASE SELECT / ENTER TYPE";
+            return;
+        }
+        if (!finalDriver) {
+            statusDiv.style.color = "#ff5252";
+            statusDiv.innerText = "PLEASE SELECT DRIVER";
+            return;
+        }
+        if (capturedPhotos.length === 0) {
+            statusDiv.style.color = "#ff5252";
+            statusDiv.innerText = "PLEASE SNAP AT LEAST 1 CONDITION PHOTO";
+            return;
+        }
 
         statusDiv.style.color = "#ff1744";
         statusDiv.innerText = "LOGGING TOW & CREATING DRIVE FOLDERS...";
 
         const payloadObj = {
             "action": "commit_tow",
-            "propertyName": locationSelect.value,
+            "propertyName": finalLocation,
             "rego": rego,
             "make": finalMake,
             "model": finalModel,
             "colour": finalColour,
             "type": finalType,
-            "driver": document.getElementById('driverSelect').value,
+            "driver": finalDriver,
             "images": capturedPhotos
         };
 
