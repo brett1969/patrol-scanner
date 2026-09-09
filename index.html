@@ -11,8 +11,8 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="Patrol Scan">
     
-    <link rel="apple-touch-icon" href="apple-touch-icon.png?v=420">
-    <link rel="icon" type="image/png" href="apple-touch-icon.png?v=420">
+    <link rel="apple-touch-icon" href="apple-touch-icon.png?v=430">
+    <link rel="icon" type="image/png" href="apple-touch-icon.png?v=430">
 
     <style>
         body { 
@@ -127,14 +127,9 @@
 </div>
 
 <canvas id="procCanvas" style="display:none;"></canvas>
-<iframe name="hiddenTarget" id="hiddenTarget" style="display:none;"></iframe>
-<form id="bypassForm" action="https://script.google.com/macros/s/AKfycbzoWD84FAwprSdWAZlm4YeyjU9ps3kTW_XXN_QMkTJxvm-LMrnFIZ2RzDLDShbV5ATK8g/exec" method="POST" target="hiddenTarget" style="display:none;">
-    <input type="hidden" name="payload" id="formPayload">
-</form>
 
 <script>
     const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzoWD84FAwprSdWAZlm4YeyjU9ps3kTW_XXN_QMkTJxvm-LMrnFIZ2RzDLDShbV5ATK8g/exec";
-    const PLATE_RECOGNIZER_KEY = "74a8bb83a49461eef0266274ce63e1e198b4c888";
     let propertyDatabase = [];
 
     const cameraInput = document.getElementById('cameraInput');
@@ -144,8 +139,6 @@
     const propertyInput = document.getElementById('propertyName');
     const canvas = document.getElementById('procCanvas');
     const ctx = canvas.getContext('2d');
-    const bypassForm = document.getElementById('bypassForm');
-    const formPayload = document.getElementById('formPayload');
 
     window.addEventListener('load', async () => {
         try {
@@ -206,52 +199,30 @@
             ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
             const base64Image = canvas.toDataURL('image/jpeg', 0.80).split(',')[1];
 
-            let detectedRego = "UNREADABLE";
-            let confidence = "LOW";
-            let makeModel = "GENERAL";
-
             try {
-                let formData = new FormData();
-                formData.append('upload', file);
-                formData.append('regions', 'au');
-
-                const anprRes = await fetch('https://api.platerecognizer.com/v1/plate-reader/', {
+                const response = await fetch(GOOGLE_SCRIPT_URL, {
                     method: 'POST',
-                    headers: {
-                        'Authorization': `Token ${PLATE_RECOGNIZER_KEY}`
-                    },
-                    body: formData
+                    headers: { 'Content-Type': 'text/plain' },
+                    body: JSON.stringify({
+                        "action": "patrol_upload",
+                        "propertyName": propertyInput.value || "GENERAL",
+                        "imageBytes": base64Image
+                    })
                 });
 
-                const anprData = await anprRes.json();
+                const resData = await response.json();
 
-                if (anprData.results && anprData.results.length > 0) {
-                    const topResult = anprData.results[0];
-                    detectedRego = topResult.plate.toUpperCase();
-                    confidence = (topResult.score > 0.8) ? "HIGH" : "LOW";
-
-                    if (topResult.vehicle && topResult.vehicle.make) {
-                        makeModel = `${topResult.vehicle.make} ${topResult.vehicle.model || ''}`.trim().toUpperCase();
-                    }
+                if (resData.status === "success" && resData.rego) {
+                    regoInput.value = resData.rego;
+                    status.innerText = "✔ MARKED!";
+                } else {
+                    regoInput.value = "UNREADABLE";
+                    status.innerText = "MARKED (CHECK PLATE)";
                 }
-            } catch(err) {
-                console.error("ANPR API Error:", err);
+            } catch (err) {
+                regoInput.value = "UNREADABLE";
+                status.innerText = "MARKED (OFFLINE)";
             }
-
-            regoInput.value = detectedRego;
-            status.innerText = "✔ MARKED!";
-
-            const payloadObj = {
-                "action": "patrol_upload",
-                "propertyName": propertyInput.value || "GENERAL",
-                "rego": detectedRego,
-                "confidence": confidence,
-                "makeModel": makeModel,
-                "imageBytes": base64Image
-            };
-
-            formPayload.value = JSON.stringify(payloadObj);
-            bypassForm.submit();
 
             setTimeout(() => {
                 status.innerText = "";
