@@ -11,8 +11,8 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="Patrol Scan">
     
-    <link rel="apple-touch-icon" href="apple-touch-icon.png?v=430">
-    <link rel="icon" type="image/png" href="apple-touch-icon.png?v=430">
+    <link rel="apple-touch-icon" href="apple-touch-icon.png?v=440">
+    <link rel="icon" type="image/png" href="apple-touch-icon.png?v=440">
 
     <style>
         body { 
@@ -191,13 +191,14 @@
         img.src = URL.createObjectURL(file);
 
         img.onload = async () => {
-            const maxWidth = 1000;
+            // Downscale image to 600px width for high-speed transfer
+            const maxWidth = 600;
             const scale = maxWidth / img.width;
             canvas.width = (img.width > maxWidth) ? maxWidth : img.width;
             canvas.height = (img.width > maxWidth) ? img.height * scale : img.height;
 
             ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-            const base64Image = canvas.toDataURL('image/jpeg', 0.80).split(',')[1];
+            const compressedBase64 = canvas.toDataURL('image/jpeg', 0.60).split(',')[1];
 
             try {
                 const response = await fetch(GOOGLE_SCRIPT_URL, {
@@ -206,7 +207,7 @@
                     body: JSON.stringify({
                         "action": "patrol_upload",
                         "propertyName": propertyInput.value || "GENERAL",
-                        "imageBytes": base64Image
+                        "imageBytes": compressedBase64
                     })
                 });
 
