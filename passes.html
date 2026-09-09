@@ -118,7 +118,16 @@
     <input type="date" id="startDate">
 
     <label>Duration (Days)</label>
-    <input type="number" id="duration" value="1" min="1" max="365">
+    <select id="duration">
+        <option value="1">1 Day</option>
+        <option value="2">2 Days</option>
+        <option value="3">3 Days</option>
+        <option value="4">4 Days</option>
+        <option value="5">5 Days</option>
+    </select>
+
+    <label>End Date</label>
+    <input type="date" id="endDate">
 
     <button class="submit-btn" id="saveBtn">LOG PASS</button>
     <div id="status"></div>
@@ -134,7 +143,8 @@
     const propertySelect = document.getElementById('propertyName');
     const regoInput = document.getElementById('rego');
     const startDateInput = document.getElementById('startDate');
-    const durationInput = document.getElementById('duration');
+    const durationSelect = document.getElementById('duration');
+    const endDateInput = document.getElementById('endDate');
     const saveBtn = document.getElementById('saveBtn');
     const statusDiv = document.getElementById('status');
     const bypassForm = document.getElementById('bypassForm');
@@ -144,7 +154,47 @@
     const today = new Date().toISOString().split('T')[0];
     startDateInput.value = today;
 
-    // Fetch properties and keep "Select Property" as default option
+    // Helper: calculate stop date from start date & duration
+    function calculateEndDate() {
+        if (!startDateInput.value) return;
+        const startParts = startDateInput.value.split('-');
+        const startDate = new Date(startParts[0], startParts[1] - 1, startParts[2]);
+        const days = parseInt(durationSelect.value) || 1;
+        
+        const stopDateObj = new Date(startDate.getTime() + (days * 24 * 60 * 60 * 1000));
+        const stopYear = stopDateObj.getFullYear();
+        const stopMonth = ("0" + (stopDateObj.getMonth() + 1)).slice(-2);
+        const stopDay = ("0" + stopDateObj.getDate()).slice(-2);
+        
+        endDateInput.value = `${stopYear}-${stopMonth}-${stopDay}`;
+    }
+
+    // Helper: calculate duration if user picks custom End Date
+    function calculateDurationFromEnd() {
+        if (!startDateInput.value || !endDateInput.value) return;
+        const sParts = startDateInput.value.split('-');
+        const eParts = endDateInput.value.split('-');
+        
+        const start = new Date(sParts[0], sParts[1] - 1, sParts[2]);
+        const end = new Date(eParts[0], eParts[1] - 1, eParts[2]);
+        
+        const diffTime = end.getTime() - start.getTime();
+        const diffDays = Math.round(diffTime / (1000 * 3600 * 24));
+        
+        if (diffDays >= 1 && diffDays <= 5) {
+            durationSelect.value = diffDays.toString();
+        }
+    }
+
+    // Initialize initial End Date
+    calculateEndDate();
+
+    // Event Listeners for Date Syncing
+    startDateInput.addEventListener('change', calculateEndDate);
+    durationSelect.addEventListener('change', calculateEndDate);
+    endDateInput.addEventListener('change', calculateDurationFromEnd);
+
+    // Fetch Properties
     window.addEventListener('load', async () => {
         try {
             const res = await fetch(`${GOOGLE_SCRIPT_URL}?action=get_properties`);
@@ -179,6 +229,13 @@
             return;
         }
 
+        // Calculate final duration days (handles custom picked dates > 5 days)
+        const sParts = startDateInput.value.split('-');
+        const eParts = endDateInput.value.split('-');
+        const start = new Date(sParts[0], sParts[1] - 1, sParts[2]);
+        const end = new Date(eParts[0], eParts[1] - 1, eParts[2]);
+        const finalDuration = Math.max(1, Math.round((end.getTime() - start.getTime()) / (1000 * 3600 * 24)));
+
         statusDiv.style.color = "#00e676";
         statusDiv.innerText = "SAVING EXEMPTION...";
 
@@ -187,7 +244,7 @@
             "propertyName": propValue,
             "rego": rego,
             "startDate": startDateInput.value,
-            "duration": durationInput.value
+            "duration": finalDuration
         };
 
         formPayload.value = JSON.stringify(payloadObj);
@@ -197,6 +254,8 @@
             statusDiv.innerText = "✔ EXEMPTION PASS LOGGED!";
             regoInput.value = "";
             propertySelect.value = "";
+            durationSelect.value = "1";
+            calculateEndDate();
             setTimeout(() => { statusDiv.innerText = ""; }, 2500);
         }, 1000);
     });
