@@ -11,11 +11,8 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="Patrol Scan">
     
-    <link rel="apple-touch-icon" href="apple-touch-icon.png?v=410">
-    <link rel="icon" type="image/png" href="apple-touch-icon.png?v=410">
-
-    <!-- High-Speed Client OCR Engine -->
-    <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
+    <link rel="apple-touch-icon" href="apple-touch-icon.png?v=420">
+    <link rel="icon" type="image/png" href="apple-touch-icon.png?v=420">
 
     <style>
         body { 
@@ -137,8 +134,8 @@
 
 <script>
     const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzoWD84FAwprSdWAZlm4YeyjU9ps3kTW_XXN_QMkTJxvm-LMrnFIZ2RzDLDShbV5ATK8g/exec";
+    const PLATE_RECOGNIZER_KEY = "74a8bb83a49461eef0266274ce63e1e198b4c888";
     let propertyDatabase = [];
-    let ocrWorker = null;
 
     const cameraInput = document.getElementById('cameraInput');
     const status = document.getElementById('status');
@@ -151,18 +148,6 @@
     const formPayload = document.getElementById('formPayload');
 
     window.addEventListener('load', async () => {
-        status.innerText = "Initializing Engine...";
-        try {
-            ocrWorker = await Tesseract.createWorker('eng', 1);
-            await ocrWorker.setParameters({
-                tessedit_char_whitelist: 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789',
-                tessedit_pageseg_mode: '7' // Single text line mode
-            });
-            status.innerText = "";
-        } catch(e) {
-            status.innerText = "";
-        }
-
         try {
             const res = await fetch(`${GOOGLE_SCRIPT_URL}?action=get_properties`);
             propertyDatabase = await res.json();
@@ -206,64 +191,62 @@
         const file = e.target.files[0];
         if (!file) return;
 
-        status.innerText = "⚡ READING PLATE...";
+        status.innerText = "⚡ ANALYZING PLATE...";
         regoInput.value = "READING...";
 
         const img = new Image();
         img.src = URL.createObjectURL(file);
 
         img.onload = async () => {
-            // Target bumper crop region
-            const width = img.width;
-            const height = img.height;
-            const cropX = width * 0.15;
-            const cropY = height * 0.45;
-            const cropW = width * 0.70;
-            const cropH = height * 0.45;
+            const maxWidth = 1000;
+            const scale = maxWidth / img.width;
+            canvas.width = (img.width > maxWidth) ? maxWidth : img.width;
+            canvas.height = (img.width > maxWidth) ? img.height * scale : img.height;
 
-            canvas.width = 800;
-            canvas.height = 350;
-            
-            // Draw clean grayscale image without thresholding artifacts
-            ctx.filter = 'grayscale(100%) contrast(180%) brightness(105%)';
-            ctx.drawImage(img, cropX, cropY, cropW, cropH, 0, 0, 800, 350);
+            ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+            const base64Image = canvas.toDataURL('image/jpeg', 0.80).split(',')[1];
 
             let detectedRego = "UNREADABLE";
             let confidence = "LOW";
+            let makeModel = "GENERAL";
 
-            if (ocrWorker) {
-                const ret = await ocrWorker.recognize(canvas);
-                let rawText = ret.data.text.replace(/[^A-Z0-9]/g, '').toUpperCase();
+            try {
+                let formData = new FormData();
+                formData.append('upload', file);
+                formData.append('regions', 'au');
 
-                // Australian Alphanumeric Match Rules
-                if (rawText.length >= 3) {
-                    // Match common QLD patterns (3 Numbers + 3 Letters or 3 Letters + 3 Numbers)
-                    if (rawText.includes("QUEENSLAND") || rawText.includes("SUNSHINE")) {
-                        rawText = rawText.replace("QUEENSLAND", "").replace("SUNSHINE", "");
-                    }
-                    
-                    if (rawText.length >= 3 && rawText.length <= 7) {
-                        detectedRego = rawText;
-                        confidence = "HIGH";
+                const anprRes = await fetch('https://api.platerecognizer.com/v1/plate-reader/', {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Token ${PLATE_RECOGNIZER_KEY}`
+                    },
+                    body: formData
+                });
+
+                const anprData = await anprRes.json();
+
+                if (anprData.results && anprData.results.length > 0) {
+                    const topResult = anprData.results[0];
+                    detectedRego = topResult.plate.toUpperCase();
+                    confidence = (topResult.score > 0.8) ? "HIGH" : "LOW";
+
+                    if (topResult.vehicle && topResult.vehicle.make) {
+                        makeModel = `${topResult.vehicle.make} ${topResult.vehicle.model || ''}`.trim().toUpperCase();
                     }
                 }
+            } catch(err) {
+                console.error("ANPR API Error:", err);
             }
 
             regoInput.value = detectedRego;
             status.innerText = "✔ MARKED!";
-
-            const fullCanvas = document.createElement('canvas');
-            const scale = 800 / img.width;
-            fullCanvas.width = 800;
-            fullCanvas.height = img.height * scale;
-            fullCanvas.getContext('2d').drawImage(img, 0, 0, fullCanvas.width, fullCanvas.height);
-            const base64Image = fullCanvas.toDataURL('image/jpeg', 0.75).split(',')[1];
 
             const payloadObj = {
                 "action": "patrol_upload",
                 "propertyName": propertyInput.value || "GENERAL",
                 "rego": detectedRego,
                 "confidence": confidence,
+                "makeModel": makeModel,
                 "imageBytes": base64Image
             };
 
