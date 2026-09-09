@@ -11,8 +11,10 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="Mark Car">
     
-    <link rel="apple-touch-icon" href="apple-touch-icon.png?v=480">
-    <link rel="icon" type="image/png" href="apple-touch-icon.png?v=480">
+    <!-- Embedded Native iOS Camera App Tile Icon -->
+    <link rel="apple-touch-icon" href="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512' width='512' height='512'><rect width='512' height='512' rx='115' fill='%231c1c1e'/><rect x='30' y='30' width='452' height='452' rx='95' fill='url(%23grad)'/><defs><linearGradient id='grad' x1='0%25' y1='0%25' x2='0%25' y2='100%25'><stop offset='0%25' stop-color='%233a3a3c'/><stop offset='100%25' stop-color='%231c1c1e'/></linearGradient></defs><path d='M160 160 L200 120 L312 120 L352 160 L412 160 C434 160 452 178 452 200 L452 372 C452 394 434 412 412 412 L100 412 C78 412 60 394 60 372 L60 200 C60 178 78 160 100 160 Z' fill='%238e8e93'/><circle cx='256' cy='286' r='85' fill='%231c1c1e' stroke='%2300e676' stroke-width='12'/><circle cx='256' cy='286' r='45' fill='%2300e676'/><circle cx='380' cy='200' r='14' fill='%23ff3b30'/></svg>">
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512' width='512' height='512'><rect width='512' height='512' rx='115' fill='%231c1c1e'/><rect x='30' y='30' width='452' height='452' rx='95' fill='url(%23grad)'/><defs><linearGradient id='grad' x1='0%25' y1='0%25' x2='0%25' y2='100%25'><stop offset='0%25' stop-color='%233a3a3c'/><stop offset='100%25' stop-color='%231c1c1e'/></linearGradient></defs><path d='M160 160 L200 120 L312 120 L352 160 L412 160 C434 160 452 178 452 200 L452 372 C452 394 434 412 412 412 L100 412 C78 412 60 394 60 372 L60 200 C60 178 78 160 100 160 Z' fill='%238e8e93'/><circle cx='256' cy='286' r='85' fill='%231c1c1e' stroke='%2300e676' stroke-width='12'/><circle cx='256' cy='286' r='45' fill='%2300e676'/><circle cx='380' cy='200' r='14' fill='%23ff3b30'/></svg>">
+    <link rel="manifest" href="manifest.json?v=490">
 
     <style>
         * { box-sizing: border-box; }
@@ -71,7 +73,6 @@
             outline: none;
             text-align-last: center;
         }
-        /* Live Viewfinder Box */
         .viewfinder-box {
             position: relative;
             width: 100%;
@@ -114,7 +115,6 @@
             font-weight: 700;
             margin-top: 2px;
         }
-        /* Extra Large Shutter Button */
         .controls {
             padding: 12px 0;
             display: flex;
@@ -138,7 +138,6 @@
             transform: scale(0.90);
             background: #00c853;
         }
-        /* Native iOS Camera Shutter Symbol */
         .shutter-icon {
             width: 36px;
             height: 36px;
@@ -200,7 +199,6 @@
     const bypassForm = document.getElementById('bypassForm');
     const formPayload = document.getElementById('formPayload');
 
-    // 1. INITIALIZE LIVE CAMERA & GPS
     window.addEventListener('load', async () => {
         initCamera();
 
@@ -276,14 +274,12 @@
         return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
     }
 
-    // 2. SINGLE TAP INSTANT SNAP (NO "USE PHOTO" PROMPT)
     snapBtn.addEventListener('click', async () => {
         if (!video.videoWidth) return;
 
         statusText.innerText = "⚡ READING PLATE...";
         regoDisplay.innerText = "READING...";
 
-        // Capture current video frame
         canvas.width = 800;
         const scale = 800 / video.videoWidth;
         canvas.height = video.videoHeight * scale;
@@ -292,7 +288,6 @@
         const dataUrl = canvas.toDataURL('image/jpeg', 0.65);
         const compressedBase64 = dataUrl.split(',')[1];
 
-        // Freeze frame visually in viewfinder momentarily
         freezeFrame.src = dataUrl;
         freezeFrame.style.display = "block";
         video.style.display = "none";
@@ -301,7 +296,6 @@
         let confidence = "LOW";
         let makeModel = "GENERAL";
 
-        // Direct sub-second ANPR pass
         try {
             const startTime = performance.now();
 
@@ -335,7 +329,6 @@
                 }
             }
 
-            // Sync display text with ANPR result
             regoDisplay.innerText = detectedRego;
             statusText.innerText = `✔ MARKED (${elapsedSeconds}s)`;
 
@@ -344,7 +337,6 @@
             statusText.innerText = "MARKED (CHECK PLATE)";
         }
 
-        // Asynchronous background logging to Sheets/Drive
         const payloadObj = {
             "action": "patrol_upload",
             "propertyName": propertySelect.value || "GENERAL PATROL",
@@ -357,7 +349,6 @@
         formPayload.value = JSON.stringify(payloadObj);
         bypassForm.submit();
 
-        // Unfreeze live view after 1.8s for next snap
         setTimeout(() => {
             freezeFrame.style.display = "none";
             video.style.display = "block";
