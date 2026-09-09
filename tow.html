@@ -5,17 +5,15 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>TOW RUN</title>
     
-    <!-- PWA Directives -->
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="RUN">
     
-    <!-- Path-Based "RUN" iOS Tile Graphic -->
     <link rel="apple-touch-icon" href="icon-run.png?v=1">
     <link rel="icon" type="image/png" href="icon-run.png?v=1">
     <link rel="manifest" href="manifest-tow.json?v=1">
-    
+
     <style>
         * { box-sizing: border-box; }
         body { 
@@ -127,20 +125,22 @@
         }
         .vehicle-item {
             background: #2a2a2a;
-            border-radius: 12px;
+            border-radius: 14px;
             padding: 14px;
-            margin-bottom: 10px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
+            margin-bottom: 14px;
             border-left: 6px solid #888;
         }
         .vehicle-item.red { border-left-color: #d32f2f; }
         .vehicle-item.yellow { border-left-color: #fbc02d; }
         .vehicle-item.green { border-left-color: #388e3c; }
 
+        .v-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
         .v-rego {
-            font-size: 24px;
+            font-size: 26px;
             font-weight: 900;
             color: #00e676;
             letter-spacing: 1.5px;
@@ -151,6 +151,21 @@
             color: #aaa;
             text-align: right;
         }
+        .tow-commit-btn {
+            background: #ff1744;
+            color: #fff;
+            font-weight: 900;
+            border: none;
+            border-radius: 10px;
+            height: 48px;
+            font-size: 16px;
+            width: 100%;
+            margin-top: 12px;
+            cursor: pointer;
+            letter-spacing: 1px;
+            box-shadow: 0 4px 14px rgba(255, 23, 68, 0.4);
+        }
+        .tow-commit-btn:active { transform: scale(0.97); }
         #loading {
             font-weight: 800;
             font-size: 18px;
@@ -205,7 +220,6 @@
 
     function processData() {
         processedProperties = {};
-
         const now = new Date();
         const cutoff = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 3, 30, 0, 0);
 
@@ -285,15 +299,25 @@
                 timeFormatted = exp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
             }
 
+            const commitButton = (type === 'red' || type === 'yellow') ? 
+                `<button class="tow-commit-btn" onclick="openPickupApp('${encodeURIComponent(propName)}', '${v.rego}', '${encodeURIComponent(v.image)}')">COMMIT TO TOW</button>` : '';
+
             item.innerHTML = `
-                <div class="v-rego">${v.rego}</div>
-                <div class="v-expiry">
-                    <div>${type === 'green' ? 'PASS ACTIVE' : 'EXPIRATION'}</div>
-                    <div style="color:#fff;">${type === 'green' ? 'LOGGED' : timeFormatted}</div>
+                <div class="v-row">
+                    <div class="v-rego">${v.rego}</div>
+                    <div class="v-expiry">
+                        <div>${type === 'green' ? 'PASS ACTIVE' : 'EXPIRATION'}</div>
+                        <div style="color:#fff;">${type === 'green' ? 'LOGGED' : timeFormatted}</div>
+                    </div>
                 </div>
+                ${commitButton}
             `;
             vehicleList.appendChild(item);
         });
+    }
+
+    function openPickupApp(prop, rego, imgUrl) {
+        window.location.href = `pickup.html?prop=${prop}&rego=${rego}&img=${imgUrl}`;
     }
 
     backBtn.addEventListener('click', () => {
