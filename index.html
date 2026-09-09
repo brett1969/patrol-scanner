@@ -11,8 +11,8 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="Patrol Scan">
     
-    <link rel="apple-touch-icon" href="apple-touch-icon.png?v=440">
-    <link rel="icon" type="image/png" href="apple-touch-icon.png?v=440">
+    <link rel="apple-touch-icon" href="apple-touch-icon.png?v=450">
+    <link rel="icon" type="image/png" href="apple-touch-icon.png?v=450">
 
     <style>
         body { 
@@ -127,9 +127,14 @@
 </div>
 
 <canvas id="procCanvas" style="display:none;"></canvas>
+<iframe name="hiddenTarget" id="hiddenTarget" style="display:none;"></iframe>
+<form id="bypassForm" action="https://script.google.com/macros/s/AKfycbzoWD84FAwprSdWAZlm4YeyjU9ps3kTW_XXN_QMkTJxvm-LMrnFIZ2RzDLDShbV5ATK8g/exec" method="POST" target="hiddenTarget" style="display:none;">
+    <input type="hidden" name="payload" id="formPayload">
+</form>
 
 <script>
     const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzoWD84FAwprSdWAZlm4YeyjU9ps3kTW_XXN_QMkTJxvm-LMrnFIZ2RzDLDShbV5ATK8g/exec";
+    const PLATE_RECOGNIZER_KEY = "74a8bb83a49461eef0266274ce63e1e198b4c888";
     let propertyDatabase = [];
 
     const cameraInput = document.getElementById('cameraInput');
@@ -139,6 +144,8 @@
     const propertyInput = document.getElementById('propertyName');
     const canvas = document.getElementById('procCanvas');
     const ctx = canvas.getContext('2d');
+    const bypassForm = document.getElementById('bypassForm');
+    const formPayload = document.getElementById('formPayload');
 
     window.addEventListener('load', async () => {
         try {
@@ -184,46 +191,71 @@
         const file = e.target.files[0];
         if (!file) return;
 
-        status.innerText = "⚡ ANALYZING PLATE...";
+        status.innerText = "⚡ READING PLATE...";
         regoInput.value = "READING...";
 
         const img = new Image();
         img.src = URL.createObjectURL(file);
 
         img.onload = async () => {
-            // Downscale image to 600px width for high-speed transfer
-            const maxWidth = 600;
+            const maxWidth = 800;
             const scale = maxWidth / img.width;
             canvas.width = (img.width > maxWidth) ? maxWidth : img.width;
             canvas.height = (img.width > maxWidth) ? img.height * scale : img.height;
 
             ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-            const compressedBase64 = canvas.toDataURL('image/jpeg', 0.60).split(',')[1];
+            const compressedBase64 = canvas.toDataURL('image/jpeg', 0.65).split(',')[1];
 
+            let detectedRego = "UNREADABLE";
+            let confidence = "LOW";
+            let makeModel = "GENERAL";
+
+            // STEP 1: Direct sub-second ANPR call from device (< 0.8 seconds)
             try {
-                const response = await fetch(GOOGLE_SCRIPT_URL, {
+                let formData = new FormData();
+                formData.append('upload', file);
+                formData.append('regions', 'au');
+
+                const startTime = performance.now();
+                const anprRes = await fetch('https://api.platerecognizer.com/v1/plate-reader/', {
                     method: 'POST',
-                    headers: { 'Content-Type': 'text/plain' },
-                    body: JSON.stringify({
-                        "action": "patrol_upload",
-                        "propertyName": propertyInput.value || "GENERAL",
-                        "imageBytes": compressedBase64
-                    })
+                    headers: { 'Authorization': `Token ${PLATE_RECOGNIZER_KEY}` },
+                    body: formData
                 });
 
-                const resData = await response.json();
+                const anprData = await anprRes.json();
+                const elapsedSeconds = ((performance.now() - startTime) / 1000).toFixed(1);
 
-                if (resData.status === "success" && resData.rego) {
-                    regoInput.value = resData.rego;
-                    status.innerText = "✔ MARKED!";
-                } else {
-                    regoInput.value = "UNREADABLE";
-                    status.innerText = "MARKED (CHECK PLATE)";
+                if (anprData.results && anprData.results.length > 0) {
+                    const topResult = anprData.results[0];
+                    detectedRego = topResult.plate.toUpperCase();
+                    confidence = (topResult.score > 0.8) ? "HIGH" : "LOW";
+
+                    if (topResult.vehicle && topResult.vehicle.make) {
+                        makeModel = `${topResult.vehicle.make} ${topResult.vehicle.model || ''}`.trim().toUpperCase();
+                    }
                 }
-            } catch (err) {
+
+                regoInput.value = detectedRego;
+                status.innerText = `✔ MARKED (${elapsedSeconds}s)`;
+
+            } catch(err) {
                 regoInput.value = "UNREADABLE";
-                status.innerText = "MARKED (OFFLINE)";
+                status.innerText = "MARKED (CHECK PLATE)";
             }
+
+            // STEP 2: Background logging to Google Drive/Sheets (non-blocking)
+            const payloadObj = {
+                "action": "patrol_upload",
+                "propertyName": propertyInput.value || "GENERAL",
+                "rego": detectedRego,
+                "confidence": confidence,
+                "makeModel": makeModel,
+                "imageBytes": compressedBase64
+            };
+
+            formPayload.value = JSON.stringify(payloadObj);
+            bypassForm.submit();
 
             setTimeout(() => {
                 status.innerText = "";
