@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>ADD EXEMPTION PASS</title>
+    
+    <style>
+        * { box-sizing: border-box; }
+        body { 
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; 
+            margin: 0; 
+            padding: 16px; 
+            background: #121212; 
+            color: #fff; 
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+        }
+        .header {
+            text-align: center;
+            margin-top: 10px;
+            margin-bottom: 20px;
+        }
+        .header h1 {
+            margin: 0;
+            font-size: 28px;
+            font-weight: 900;
+            color: #00e676;
+            letter-spacing: 2px;
+        }
+        .card {
+            background: #1e1e1e;
+            border-radius: 16px;
+            padding: 20px;
+            width: 100%;
+            max-width: 420px;
+            border: 1px solid #2a2a2a;
+            box-shadow: 0 6px 20px rgba(0,0,0,0.6);
+        }
+        label {
+            font-size: 11px;
+            text-transform: uppercase;
+            color: #888;
+            display: block;
+            margin-top: 14px;
+            font-weight: 700;
+        }
+        input, select {
+            width: 100%;
+            padding: 14px;
+            border-radius: 10px;
+            border: 1px solid #333;
+            background: #2a2a2a;
+            color: #fff;
+            font-size: 16px;
+            margin-top: 6px;
+            outline: none;
+            box-sizing: border-box;
+        }
+        input[type="text"] {
+            text-transform: uppercase;
+            font-weight: 700;
+            letter-spacing: 1px;
+        }
+        .submit-btn {
+            background: #00e676;
+            color: #000;
+            font-weight: 900;
+            border: none;
+            border-radius: 12px;
+            padding: 18px;
+            font-size: 20px;
+            width: 100%;
+            margin-top: 24px;
+            cursor: pointer;
+            box-shadow: 0 4px 15px rgba(0, 230, 118, 0.4);
+        }
+        .submit-btn:active { transform: scale(0.97); }
+        #status {
+            text-align: center;
+            font-weight: 800;
+            font-size: 16px;
+            margin-top: 16px;
+            min-height: 24px;
+        }
+    </style>
+</head>
+<body>
+
+<div class="header">
+    <h1>ADD EXEMPTION PASS</h1>
+</div>
+
+<div class="card">
+    <label>Property Name</label>
+    <select id="propertyName">
+        <option value="GENERAL PATROL">LOADING PROPERTIES...</option>
+    </select>
+
+    <label>Vehicle Registration</label>
+    <input type="text" id="rego" placeholder="E.G. XXX123" maxlength="10">
+
+    <label>Start Date</label>
+    <input type="date" id="startDate">
+
+    <label>Duration (Days)</label>
+    <input type="number" id="duration" value="1" min="1" max="365">
+
+    <button class="submit-btn" id="saveBtn">ISSUE EXEMPTION PASS</button>
+    <div id="status"></div>
+</div>
+
+<iframe name="hiddenTarget" id="hiddenTarget" style="display:none;"></iframe>
+<form id="bypassForm" action="https://script.google.com/macros/s/AKfycbzoWD84FAwprSdWAZlm4YeyjU9ps3kTW_XXN_QMkTJxvm-LMrnFIZ2RzDLDShbV5ATK8g/exec" method="POST" target="hiddenTarget" style="display:none;">
+    <input type="hidden" name="payload" id="formPayload">
+</form>
+
+<script>
+    const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzoWD84FAwprSdWAZlm4YeyjU9ps3kTW_XXN_QMkTJxvm-LMrnFIZ2RzDLDShbV5ATK8g/exec";
+    const propertySelect = document.getElementById('propertyName');
+    const regoInput = document.getElementById('rego');
+    const startDateInput = document.getElementById('startDate');
+    const durationInput = document.getElementById('duration');
+    const saveBtn = document.getElementById('saveBtn');
+    const statusDiv = document.getElementById('status');
+    const bypassForm = document.getElementById('bypassForm');
+    const formPayload = document.getElementById('formPayload');
+
+    // Auto-set today's date
+    const today = new Date().toISOString().split('T')[0];
+    startDateInput.value = today;
+
+    // Load Properties
+    window.addEventListener('load', async () => {
+        try {
+            const res = await fetch(`${GOOGLE_SCRIPT_URL}?action=get_properties`);
+            const props = await res.json();
+            if (props && props.length > 0) {
+                propertySelect.innerHTML = "";
+                props.forEach(p => {
+                    const opt = document.createElement('option');
+                    opt.value = p.name;
+                    opt.innerText = p.name.toUpperCase();
+                    propertySelect.appendChild(opt);
+                });
+            }
+        } catch(e) {
+            propertySelect.innerHTML = "<option value='GENERAL PATROL'>GENERAL PATROL</option>";
+        }
+    });
+
+    saveBtn.addEventListener('click', () => {
+        const rego = regoInput.value.trim().toUpperCase();
+        if (!rego) {
+            statusDiv.style.color = "#ff5252";
+            statusDiv.innerText = "PLEASE ENTER REGISTRATION";
+            return;
+        }
+
+        statusDiv.style.color = "#00e676";
+        statusDiv.innerText = "SAVING EXEMPTION...";
+
+        const payloadObj = {
+            "action": "add_pass",
+            "propertyName": propertySelect.value,
+            "rego": rego,
+            "startDate": startDateInput.value,
+            "duration": durationInput.value
+        };
+
+        formPayload.value = JSON.stringify(payloadObj);
+        bypassForm.submit();
+
+        setTimeout(() => {
+            statusDiv.innerText = "✔ EXEMPTION PASS ADDED!";
+            regoInput.value = "";
+            setTimeout(() => { statusDiv.innerText = ""; }, 2500);
+        }, 1000);
+    });
+</script>
+
+</body>
+</html>
