@@ -5,6 +5,17 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>ADD PASS</title>
     
+    <!-- PWA Directives -->
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Passes">
+    
+    <!-- Embedded "P" Tile Icon -->
+    <link rel="apple-touch-icon" href="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512' width='512' height='512'><rect width='512' height='512' rx='115' fill='%231c1c1e'/><rect x='30' y='30' width='452' height='452' rx='95' fill='url(%23grad)'/><defs><linearGradient id='grad' x1='0%25' y1='0%25' x2='0%25' y2='100%25'><stop offset='0%25' stop-color='%232c2c2e'/><stop offset='100%25' stop-color='%23121212'/></linearGradient></defs><text x='50%25' y='66%25' font-family='-apple-system, BlinkMacSystemFont, Arial, sans-serif' font-size='320' font-weight='900' fill='%2300e676' text-anchor='middle'>P</text></svg>">
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512' width='512' height='512'><rect width='512' height='512' rx='115' fill='%231c1c1e'/><rect x='30' y='30' width='452' height='452' rx='95' fill='url(%23grad)'/><defs><linearGradient id='grad' x1='0%25' y1='0%25' x2='0%25' y2='100%25'><stop offset='0%25' stop-color='%232c2c2e'/><stop offset='100%25' stop-color='%23121212'/></linearGradient></defs><text x='50%25' y='66%25' font-family='-apple-system, BlinkMacSystemFont, Arial, sans-serif' font-size='320' font-weight='900' fill='%2300e676' text-anchor='middle'>P</text></svg>">
+    <link rel="manifest" href="manifest-passes.json?v=2">
+
     <style>
         * { box-sizing: border-box; }
         body { 
@@ -154,11 +165,9 @@
     const bypassForm = document.getElementById('bypassForm');
     const formPayload = document.getElementById('formPayload');
 
-    // Auto-set today's date
     const today = new Date().toISOString().split('T')[0];
     startDateInput.value = today;
 
-    // Helper: calculate stop date from start date & duration
     function calculateEndDate() {
         if (!startDateInput.value) return;
         const startParts = startDateInput.value.split('-');
@@ -173,7 +182,6 @@
         endDateInput.value = `${stopYear}-${stopMonth}-${stopDay}`;
     }
 
-    // Helper: calculate duration if user picks custom End Date
     function calculateDurationFromEnd() {
         if (!startDateInput.value || !endDateInput.value) return;
         const sParts = startDateInput.value.split('-');
@@ -190,15 +198,12 @@
         }
     }
 
-    // Initialize initial End Date
     calculateEndDate();
 
-    // Event Listeners for Date Syncing
     startDateInput.addEventListener('change', calculateEndDate);
     durationSelect.addEventListener('change', calculateEndDate);
     endDateInput.addEventListener('change', calculateDurationFromEnd);
 
-    // Fetch Properties
     window.addEventListener('load', async () => {
         try {
             const res = await fetch(`${GOOGLE_SCRIPT_URL}?action=get_properties`);
