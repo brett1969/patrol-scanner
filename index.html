@@ -3,127 +3,147 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>National Towing - Patrol Marker</title>
+    <title>MARK CAR</title>
     
     <!-- PWA Directives -->
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <meta name="apple-mobile-web-app-title" content="Patrol Scan">
+    <meta name="apple-mobile-web-app-title" content="Mark Car">
     
-    <link rel="apple-touch-icon" href="apple-touch-icon.png?v=450">
-    <link rel="icon" type="image/png" href="apple-touch-icon.png?v=450">
+    <link rel="apple-touch-icon" href="apple-touch-icon.png?v=460">
+    <link rel="icon" type="image/png" href="apple-touch-icon.png?v=460">
 
     <style>
+        * { box-sizing: border-box; }
         body { 
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; 
             margin: 0; 
-            padding: 16px; 
+            padding: 12px; 
             background: #121212; 
             color: #fff; 
             -webkit-user-select: none;
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
         }
-        .card { 
-            background: #1e1e1e; 
-            border-radius: 16px; 
-            padding: 20px; 
-            box-shadow: 0 4px 15px rgba(0,0,0,0.6); 
-            border: 1px solid #2a2a2a;
+        .header {
             text-align: center;
+            margin-bottom: 8px;
         }
-        h2 { 
-            margin-top: 0; 
-            color: #00e676; 
-            font-size: 20px;
-            letter-spacing: 1px;
-            margin-bottom: 4px;
+        .header h1 {
+            margin: 0;
+            font-size: 24px;
+            font-weight: 900;
+            color: #888;
+            letter-spacing: 2px;
         }
-        label { 
-            font-size: 11px; 
-            text-transform: uppercase; 
-            color: #888; 
-            display: block; 
-            margin-top: 14px; 
-            font-weight: 600;
-            text-align: left;
-        }
-        input { 
-            width: 100%; 
-            padding: 14px; 
-            border-radius: 10px; 
-            border: 1px solid #333; 
-            background: #2a2a2a; 
-            color: #fff; 
-            font-size: 16px; 
-            box-sizing: border-box; 
-            margin-top: 6px; 
-            outline: none;
-        }
-        .camera-btn-wrapper {
-            position: relative;
-            margin-top: 20px;
+        .location-banner {
+            background: #1e1e1e;
+            border-radius: 12px;
+            padding: 10px;
+            border: 1px solid #333;
+            text-align: center;
             margin-bottom: 10px;
         }
-        .camera-btn {
-            background: #00e676;
-            color: #000;
-            font-weight: 800;
-            border: none;
-            border-radius: 14px;
-            padding: 24px;
+        .location-title {
+            font-size: 10px;
+            color: #888;
+            text-transform: uppercase;
+            font-weight: 700;
+        }
+        .location-name {
             font-size: 22px;
-            width: 100%;
+            font-weight: 800;
+            color: #00e676;
+            margin-top: 2px;
+        }
+        .view-container {
+            flex: 1;
+            position: relative;
+            background: #000;
+            border-radius: 16px;
+            overflow: hidden;
+            border: 2px solid #2a2a2a;
             display: flex;
             align-items: center;
             justify-content: center;
-            gap: 12px;
-            box-shadow: 0 6px 16px rgba(0, 230, 118, 0.4);
-            cursor: pointer;
         }
-        .camera-btn:active { transform: scale(0.97); }
-        .camera-input {
-            position: absolute;
-            top: 0;
-            left: 0;
+        video {
             width: 100%;
             height: 100%;
-            opacity: 0;
+            object-fit: cover;
+        }
+        .overlay-rego {
+            position: absolute;
+            top: 12px;
+            left: 12px;
+            right: 12px;
+            background: rgba(0,0,0,0.85);
+            border: 2px solid #00e676;
+            border-radius: 12px;
+            padding: 10px;
+            text-align: center;
+        }
+        .rego-display {
+            font-size: 32px;
+            font-weight: 900;
+            color: #00e676;
+            letter-spacing: 3px;
+        }
+        .status-display {
+            font-size: 13px;
+            font-weight: 700;
+            color: #fff;
+            margin-top: 2px;
+        }
+        .controls {
+            padding: 12px 0 6px 0;
+            display: flex;
+            justify-content: center;
+        }
+        .snap-btn {
+            background: #00e676;
+            color: #000;
+            border: none;
+            width: 84px;
+            height: 84px;
+            border-radius: 50%;
+            font-size: 38px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 6px 20px rgba(0, 230, 118, 0.5);
             cursor: pointer;
+            transition: transform 0.1s ease;
         }
-        #status { 
-            font-size: 20px; 
-            font-weight: 800;
-            color: #00e676; 
-            margin-top: 15px; 
-            min-height: 28px;
-        }
-        .gps-badge {
-            font-size: 12px;
-            color: #888;
-            margin-bottom: 12px;
+        .snap-btn:active {
+            transform: scale(0.90);
         }
     </style>
 </head>
 <body>
 
-<div class="card">
-    <h2>NIGHT PATROL MARKER</h2>
-    <div id="gpsStatus" class="gps-badge">Locating Property via GPS...</div>
+<div class="header">
+    <h1>MARK CAR</h1>
+</div>
+
+<div class="location-banner">
+    <div class="location-title" id="gpsStatus">GPS LOCKING...</div>
+    <div class="location-name" id="propertyName">LOCATING...</div>
+</div>
+
+<div class="view-container">
+    <video id="webcam" autoplay playsinline muted></video>
     
-    <label>Location / Property</label>
-    <input type="text" id="propertyName" placeholder="Detecting location..." style="font-weight: 600; color: #00e676;">
-
-    <div class="camera-btn-wrapper">
-        <button class="camera-btn">
-            📷 SNAP & MARK PATROL
-        </button>
-        <input type="file" id="cameraInput" class="camera-input" accept="image/*" capture="environment">
+    <div class="overlay-rego">
+        <div class="rego-display" id="rego">READY</div>
+        <div class="status-display" id="status">TAP BUTTON TO SNAP</div>
     </div>
+</div>
 
-    <div id="status"></div>
-
-    <label>Scanned Plate Result</label>
-    <input type="text" id="rego" placeholder="READY FOR SNAP" style="text-transform: uppercase; font-weight: bold; font-size: 32px; text-align: center; color: #00e676; letter-spacing: 2px;" readonly>
+<div class="controls">
+    <button class="snap-btn" id="snapBtn">📷</button>
 </div>
 
 <canvas id="procCanvas" style="display:none;"></canvas>
@@ -135,19 +155,25 @@
 <script>
     const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzoWD84FAwprSdWAZlm4YeyjU9ps3kTW_XXN_QMkTJxvm-LMrnFIZ2RzDLDShbV5ATK8g/exec";
     const PLATE_RECOGNIZER_KEY = "74a8bb83a49461eef0266274ce63e1e198b4c888";
+    
     let propertyDatabase = [];
+    let activeStream = null;
 
-    const cameraInput = document.getElementById('cameraInput');
+    const video = document.getElementById('webcam');
+    const snapBtn = document.getElementById('snapBtn');
     const status = document.getElementById('status');
     const gpsStatus = document.getElementById('gpsStatus');
-    const regoInput = document.getElementById('rego');
-    const propertyInput = document.getElementById('propertyName');
+    const regoDisplay = document.getElementById('rego');
+    const propertyNameDisplay = document.getElementById('propertyName');
     const canvas = document.getElementById('procCanvas');
     const ctx = canvas.getContext('2d');
     const bypassForm = document.getElementById('bypassForm');
     const formPayload = document.getElementById('formPayload');
 
+    // 1. START LIVE CAMERA & GPS
     window.addEventListener('load', async () => {
+        startCamera();
+        
         try {
             const res = await fetch(`${GOOGLE_SCRIPT_URL}?action=get_properties`);
             propertyDatabase = await res.json();
@@ -163,19 +189,39 @@
                     });
 
                     if (matchedProp) {
-                        propertyInput.value = matchedProp.name;
-                        gpsStatus.innerText = `GPS Locked: ${matchedProp.name}`;
+                        propertyNameDisplay.innerText = matchedProp.name.toUpperCase();
+                        gpsStatus.innerText = "GPS LOCKED";
                     } else {
-                        propertyInput.placeholder = "Enter Property Name...";
-                        gpsStatus.innerText = "GPS Active: Enter location manually";
+                        propertyNameDisplay.innerText = "GENERAL PATROL";
+                        gpsStatus.innerText = "LOCATION ACTIVE";
                     }
                 });
             }
         } catch(e) {
-            propertyInput.placeholder = "Enter Property Name...";
-            gpsStatus.innerText = "Location Offline";
+            propertyNameDisplay.innerText = "GENERAL PATROL";
+            gpsStatus.innerText = "LOCATION OFFLINE";
         }
     });
+
+    async function startCamera() {
+        try {
+            activeStream = await navigator.mediaDevices.getUserMedia({
+                video: { facingMode: { exact: "environment" }, width: { ideal: 1920 }, height: { ideal: 1080 } },
+                audio: false
+            });
+            video.srcObject = activeStream;
+        } catch (err) {
+            try {
+                activeStream = await navigator.mediaDevices.getUserMedia({
+                    video: { facingMode: "user" },
+                    audio: false
+                });
+                video.srcObject = activeStream;
+            } catch(e) {
+                status.innerText = "CAMERA ACCESS DENIED";
+            }
+        }
+    }
 
     function getDistanceMeters(lat1, lon1, lat2, lon2) {
         const R = 6371e3;
@@ -187,81 +233,85 @@
         return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
     }
 
-    cameraInput.addEventListener('change', async (e) => {
-        const file = e.target.files[0];
-        if (!file) return;
+    // 2. INSTANT CAPTURE ON BUTTON TAP
+    snapBtn.addEventListener('click', async () => {
+        if (!video.videoWidth) return;
 
         status.innerText = "⚡ READING PLATE...";
-        regoInput.value = "READING...";
+        regoDisplay.innerText = "READING...";
 
-        const img = new Image();
-        img.src = URL.createObjectURL(file);
+        // Capture frame from video stream onto canvas
+        canvas.width = 800;
+        const scale = 800 / video.videoWidth;
+        canvas.height = video.videoHeight * scale;
+        ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
 
-        img.onload = async () => {
-            const maxWidth = 800;
-            const scale = maxWidth / img.width;
-            canvas.width = (img.width > maxWidth) ? maxWidth : img.width;
-            canvas.height = (img.width > maxWidth) ? img.height * scale : img.height;
+        const compressedBase64 = canvas.toDataURL('image/jpeg', 0.65).split(',')[1];
 
-            ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-            const compressedBase64 = canvas.toDataURL('image/jpeg', 0.65).split(',')[1];
+        let detectedRego = "UNREADABLE";
+        let confidence = "LOW";
+        let makeModel = "GENERAL";
 
-            let detectedRego = "UNREADABLE";
-            let confidence = "LOW";
-            let makeModel = "GENERAL";
+        // Direct high-speed API call
+        try {
+            const startTime = performance.now();
+            
+            // Convert Canvas base64 to Blob
+            const byteCharacters = atob(compressedBase64);
+            const byteNumbers = new Array(byteCharacters.length);
+            for (let i = 0; i < byteCharacters.length; i++) {
+                byteNumbers[i] = byteCharacters.charCodeAt(i);
+            }
+            const byteArray = new Uint8Array(byteNumbers);
+            const blob = new Blob([byteArray], {type: 'image/jpeg'});
 
-            // STEP 1: Direct sub-second ANPR call from device (< 0.8 seconds)
-            try {
-                let formData = new FormData();
-                formData.append('upload', file);
-                formData.append('regions', 'au');
+            let formData = new FormData();
+            formData.append('upload', blob, 'snap.jpg');
+            formData.append('regions', 'au');
 
-                const startTime = performance.now();
-                const anprRes = await fetch('https://api.platerecognizer.com/v1/plate-reader/', {
-                    method: 'POST',
-                    headers: { 'Authorization': `Token ${PLATE_RECOGNIZER_KEY}` },
-                    body: formData
-                });
+            const anprRes = await fetch('https://api.platerecognizer.com/v1/plate-reader/', {
+                method: 'POST',
+                headers: { 'Authorization': `Token ${PLATE_RECOGNIZER_KEY}` },
+                body: formData
+            });
 
-                const anprData = await anprRes.json();
-                const elapsedSeconds = ((performance.now() - startTime) / 1000).toFixed(1);
+            const anprData = await anprRes.json();
+            const elapsedSeconds = ((performance.now() - startTime) / 1000).toFixed(1);
 
-                if (anprData.results && anprData.results.length > 0) {
-                    const topResult = anprData.results[0];
-                    detectedRego = topResult.plate.toUpperCase();
-                    confidence = (topResult.score > 0.8) ? "HIGH" : "LOW";
+            if (anprData.results && anprData.results.length > 0) {
+                const topResult = anprData.results[0];
+                detectedRego = topResult.plate.toUpperCase();
+                confidence = (topResult.score > 0.8) ? "HIGH" : "LOW";
 
-                    if (topResult.vehicle && topResult.vehicle.make) {
-                        makeModel = `${topResult.vehicle.make} ${topResult.vehicle.model || ''}`.trim().toUpperCase();
-                    }
+                if (topResult.vehicle && topResult.vehicle.make) {
+                    makeModel = `${topResult.vehicle.make} ${topResult.vehicle.model || ''}`.trim().toUpperCase();
                 }
-
-                regoInput.value = detectedRego;
-                status.innerText = `✔ MARKED (${elapsedSeconds}s)`;
-
-            } catch(err) {
-                regoInput.value = "UNREADABLE";
-                status.innerText = "MARKED (CHECK PLATE)";
             }
 
-            // STEP 2: Background logging to Google Drive/Sheets (non-blocking)
-            const payloadObj = {
-                "action": "patrol_upload",
-                "propertyName": propertyInput.value || "GENERAL",
-                "rego": detectedRego,
-                "confidence": confidence,
-                "makeModel": makeModel,
-                "imageBytes": compressedBase64
-            };
+            regoDisplay.innerText = detectedRego;
+            status.innerText = `✔ MARKED (${elapsedSeconds}s)`;
 
-            formPayload.value = JSON.stringify(payloadObj);
-            bypassForm.submit();
+        } catch(err) {
+            regoDisplay.innerText = "UNREADABLE";
+            status.innerText = "MARKED (CHECK PLATE)";
+        }
 
-            setTimeout(() => {
-                status.innerText = "";
-                cameraInput.value = "";
-            }, 1500);
+        // Background logging
+        const payloadObj = {
+            "action": "patrol_upload",
+            "propertyName": propertyNameDisplay.innerText || "GENERAL PATROL",
+            "rego": detectedRego,
+            "confidence": confidence,
+            "makeModel": makeModel,
+            "imageBytes": compressedBase64
         };
+
+        formPayload.value = JSON.stringify(payloadObj);
+        bypassForm.submit();
+
+        setTimeout(() => {
+            status.innerText = "TAP BUTTON TO SNAP";
+        }, 2000);
     });
 </script>
 
