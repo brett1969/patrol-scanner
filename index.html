@@ -11,121 +11,139 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="Mark Car">
     
-    <link rel="apple-touch-icon" href="apple-touch-icon.png?v=470">
-    <link rel="icon" type="image/png" href="apple-touch-icon.png?v=470">
+    <link rel="apple-touch-icon" href="apple-touch-icon.png?v=480">
+    <link rel="icon" type="image/png" href="apple-touch-icon.png?v=480">
 
     <style>
         * { box-sizing: border-box; }
         body { 
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; 
             margin: 0; 
-            padding: 16px; 
+            padding: 12px; 
             background: #121212; 
             color: #fff; 
             -webkit-user-select: none;
             display: flex;
             flex-direction: column;
             align-items: center;
-            min-height: 100vh;
+            height: 100vh;
+            overflow: hidden;
         }
         .header {
             text-align: center;
-            margin-top: 8px;
-            margin-bottom: 16px;
+            margin-top: 4px;
+            margin-bottom: 8px;
         }
         .header h1 {
             margin: 0;
-            font-size: 40px; /* Larger Font */
+            font-size: 38px;
             font-weight: 900;
             color: #00e676;
-            letter-spacing: 3px;
+            letter-spacing: 2px;
         }
-        .card {
+        .location-card {
             background: #1e1e1e;
-            border-radius: 18px;
-            padding: 20px;
+            border-radius: 14px;
+            padding: 10px 14px;
             width: 100%;
             max-width: 420px;
             border: 1px solid #2a2a2a;
-            box-shadow: 0 6px 20px rgba(0,0,0,0.6);
+            margin-bottom: 8px;
             text-align: center;
         }
-        label {
-            font-size: 11px;
+        .gps-badge {
+            font-size: 10px;
             text-transform: uppercase;
             color: #888;
-            display: block;
-            margin-top: 10px;
             font-weight: 700;
-            text-align: left;
+            margin-bottom: 4px;
+            display: block;
         }
         .select-dropdown {
             width: 100%;
-            padding: 16px;
-            border-radius: 12px;
+            padding: 10px;
+            border-radius: 10px;
             border: 1px solid #333;
             background: #2a2a2a;
             color: #00e676;
-            font-size: 20px;
+            font-size: 18px;
             font-weight: 800;
-            margin-top: 6px;
             outline: none;
-            appearance: none;
-            -webkit-appearance: none;
             text-align-last: center;
         }
-        .result-box {
-            margin-top: 20px;
-            background: #121212;
+        /* Live Viewfinder Box */
+        .viewfinder-box {
+            position: relative;
+            width: 100%;
+            max-width: 420px;
+            flex: 1;
+            background: #000;
+            border-radius: 16px;
+            overflow: hidden;
             border: 2px solid #00e676;
-            border-radius: 14px;
-            padding: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        video, img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        .result-overlay {
+            position: absolute;
+            top: 12px;
+            left: 12px;
+            right: 12px;
+            background: rgba(0,0,0,0.85);
+            border: 2px solid #00e676;
+            border-radius: 12px;
+            padding: 10px;
+            text-align: center;
+            z-index: 10;
         }
         .rego-text {
-            font-size: 36px;
+            font-size: 34px;
             font-weight: 900;
             color: #00e676;
             letter-spacing: 3px;
         }
         .status-text {
-            font-size: 13px;
-            color: #888;
-            font-weight: 600;
-            margin-top: 4px;
+            font-size: 12px;
+            color: #fff;
+            font-weight: 700;
+            margin-top: 2px;
         }
-        /* Floating Bottom Camera Icon Button */
-        .camera-btn-wrapper {
-            position: fixed;
-            bottom: 30px;
-            left: 50%;
-            transform: translateX(-50%);
-            z-index: 999;
+        /* Extra Large Shutter Button */
+        .controls {
+            padding: 12px 0;
+            display: flex;
+            justify-content: center;
+            width: 100%;
         }
-        .camera-btn {
+        .shutter-btn {
             background: #00e676;
-            color: #000;
-            border: none;
-            width: 88px;
-            height: 88px;
+            border: 5px solid #fff;
+            width: 96px;
+            height: 96px;
             border-radius: 50%;
-            font-size: 42px;
             display: flex;
             align-items: center;
             justify-content: center;
-            box-shadow: 0 8px 25px rgba(0, 230, 118, 0.6);
+            box-shadow: 0 6px 24px rgba(0, 230, 118, 0.6);
             cursor: pointer;
+            outline: none;
         }
-        .camera-btn:active {
-            transform: scale(0.92);
+        .shutter-btn:active {
+            transform: scale(0.90);
+            background: #00c853;
         }
-        .camera-input {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            opacity: 0;
-            cursor: pointer;
+        /* Native iOS Camera Shutter Symbol */
+        .shutter-icon {
+            width: 36px;
+            height: 36px;
+            border: 4px solid #000;
+            border-radius: 50%;
         }
     </style>
 </head>
@@ -135,22 +153,27 @@
     <h1>MARK CAR</h1>
 </div>
 
-<div class="card">
-    <label id="gpsBadge">DETECTING LOCATION VIA GPS...</label>
+<div class="location-card">
+    <span class="gps-badge" id="gpsBadge">DETECTING LOCATION...</span>
     <select id="propertySelect" class="select-dropdown">
         <option value="GENERAL PATROL">GENERAL PATROL</option>
     </select>
+</div>
 
-    <div class="result-box">
+<div class="viewfinder-box">
+    <video id="webcam" autoplay playsinline muted></video>
+    <img id="freezeFrame" style="display:none;" />
+    
+    <div class="result-overlay">
         <div class="rego-text" id="rego">READY</div>
-        <div class="status-text" id="status">TAP CAMERA BUTTON TO SNAP</div>
+        <div class="status-text" id="status">TAP BUTTON TO SNAP</div>
     </div>
 </div>
 
-<!-- Bottom Camera Icon Button -->
-<div class="camera-btn-wrapper">
-    <button class="camera-btn">📷</button>
-    <input type="file" id="cameraInput" class="camera-input" accept="image/*" capture="environment">
+<div class="controls">
+    <button class="shutter-btn" id="snapBtn">
+        <div class="shutter-icon"></div>
+    </button>
 </div>
 
 <canvas id="procCanvas" style="display:none;"></canvas>
@@ -165,7 +188,9 @@
     
     let propertyDatabase = [];
 
-    const cameraInput = document.getElementById('cameraInput');
+    const video = document.getElementById('webcam');
+    const freezeFrame = document.getElementById('freezeFrame');
+    const snapBtn = document.getElementById('snapBtn');
     const statusText = document.getElementById('status');
     const gpsBadge = document.getElementById('gpsBadge');
     const regoDisplay = document.getElementById('rego');
@@ -175,8 +200,10 @@
     const bypassForm = document.getElementById('bypassForm');
     const formPayload = document.getElementById('formPayload');
 
-    // 1. AUTO-LOAD PROPERTIES & GEOLOCATE NEAREST
+    // 1. INITIALIZE LIVE CAMERA & GPS
     window.addEventListener('load', async () => {
+        initCamera();
+
         try {
             const res = await fetch(`${GOOGLE_SCRIPT_URL}?action=get_properties`);
             propertyDatabase = await res.json();
@@ -213,7 +240,7 @@
                         propertySelect.value = nearestProp.name;
                         gpsBadge.innerText = "GPS LOCKED (NEAREST PROPERTY)";
                     } else {
-                        gpsBadge.innerText = "GPS ACTIVE (SELECT PROPERTY IF NEEDED)";
+                        gpsBadge.innerText = "GPS ACTIVE";
                     }
                 });
             }
@@ -221,6 +248,23 @@
             gpsBadge.innerText = "LOCATION OFFLINE";
         }
     });
+
+    async function initCamera() {
+        try {
+            const stream = await navigator.mediaDevices.getUserMedia({
+                video: { facingMode: { exact: "environment" }, width: { ideal: 1280 }, height: { ideal: 720 } },
+                audio: false
+            });
+            video.srcObject = stream;
+        } catch (err) {
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: false });
+                video.srcObject = stream;
+            } catch(e) {
+                statusText.innerText = "ALLOW CAMERA PERMISSION";
+            }
+        }
+    }
 
     function getDistanceMeters(lat1, lon1, lat2, lon2) {
         const R = 6371e3;
@@ -232,83 +276,93 @@
         return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
     }
 
-    // 2. RELIABLE SNAP & CLOUD ANPR PASS
-    cameraInput.addEventListener('change', async (e) => {
-        const file = e.target.files[0];
-        if (!file) return;
+    // 2. SINGLE TAP INSTANT SNAP (NO "USE PHOTO" PROMPT)
+    snapBtn.addEventListener('click', async () => {
+        if (!video.videoWidth) return;
 
-        statusText.innerText = "⚡ ANALYZING PLATE...";
+        statusText.innerText = "⚡ READING PLATE...";
         regoDisplay.innerText = "READING...";
 
-        const img = new Image();
-        img.src = URL.createObjectURL(file);
+        // Capture current video frame
+        canvas.width = 800;
+        const scale = 800 / video.videoWidth;
+        canvas.height = video.videoHeight * scale;
+        ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
 
-        img.onload = async () => {
-            const maxWidth = 800;
-            const scale = maxWidth / img.width;
-            canvas.width = (img.width > maxWidth) ? maxWidth : img.width;
-            canvas.height = (img.width > maxWidth) ? img.height * scale : img.height;
+        const dataUrl = canvas.toDataURL('image/jpeg', 0.65);
+        const compressedBase64 = dataUrl.split(',')[1];
 
-            ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-            const compressedBase64 = canvas.toDataURL('image/jpeg', 0.65).split(',')[1];
+        // Freeze frame visually in viewfinder momentarily
+        freezeFrame.src = dataUrl;
+        freezeFrame.style.display = "block";
+        video.style.display = "none";
 
-            let detectedRego = "UNREADABLE";
-            let confidence = "LOW";
-            let makeModel = "GENERAL";
+        let detectedRego = "UNREADABLE";
+        let confidence = "LOW";
+        let makeModel = "GENERAL";
 
-            // Direct sub-second ANPR call
-            try {
-                const startTime = performance.now();
-                
-                let formData = new FormData();
-                formData.append('upload', file);
-                formData.append('regions', 'au');
+        // Direct sub-second ANPR pass
+        try {
+            const startTime = performance.now();
 
-                const anprRes = await fetch('https://api.platerecognizer.com/v1/plate-reader/', {
-                    method: 'POST',
-                    headers: { 'Authorization': `Token ${PLATE_RECOGNIZER_KEY}` },
-                    body: formData
-                });
+            const byteCharacters = atob(compressedBase64);
+            const byteNumbers = new Array(byteCharacters.length);
+            for (let i = 0; i < byteCharacters.length; i++) {
+                byteNumbers[i] = byteCharacters.charCodeAt(i);
+            }
+            const blob = new Blob([new Uint8Array(byteNumbers)], {type: 'image/jpeg'});
 
-                const anprData = await anprRes.json();
-                const elapsedSeconds = ((performance.now() - startTime) / 1000).toFixed(1);
+            let formData = new FormData();
+            formData.append('upload', blob, 'snap.jpg');
+            formData.append('regions', 'au');
 
-                if (anprData.results && anprData.results.length > 0) {
-                    const topResult = anprData.results[0];
-                    detectedRego = topResult.plate.toUpperCase();
-                    confidence = (topResult.score > 0.8) ? "HIGH" : "LOW";
+            const anprRes = await fetch('https://api.platerecognizer.com/v1/plate-reader/', {
+                method: 'POST',
+                headers: { 'Authorization': `Token ${PLATE_RECOGNIZER_KEY}` },
+                body: formData
+            });
 
-                    if (topResult.vehicle && topResult.vehicle.make) {
-                        makeModel = `${topResult.vehicle.make} ${topResult.vehicle.model || ''}`.trim().toUpperCase();
-                    }
+            const anprData = await anprRes.json();
+            const elapsedSeconds = ((performance.now() - startTime) / 1000).toFixed(1);
+
+            if (anprData.results && anprData.results.length > 0) {
+                const topResult = anprData.results[0];
+                detectedRego = topResult.plate.toUpperCase();
+                confidence = (topResult.score > 0.8) ? "HIGH" : "LOW";
+
+                if (topResult.vehicle && topResult.vehicle.make) {
+                    makeModel = `${topResult.vehicle.make} ${topResult.vehicle.model || ''}`.trim().toUpperCase();
                 }
-
-                regoDisplay.innerText = detectedRego;
-                statusText.innerText = `✔ MARKED (${elapsedSeconds}s)`;
-
-            } catch(err) {
-                regoDisplay.innerText = "UNREADABLE";
-                statusText.innerText = "MARKED (CHECK PLATE)";
             }
 
-            // Background logging
-            const payloadObj = {
-                "action": "patrol_upload",
-                "propertyName": propertySelect.value || "GENERAL PATROL",
-                "rego": detectedRego,
-                "confidence": confidence,
-                "makeModel": makeModel,
-                "imageBytes": compressedBase64
-            };
+            // Sync display text with ANPR result
+            regoDisplay.innerText = detectedRego;
+            statusText.innerText = `✔ MARKED (${elapsedSeconds}s)`;
 
-            formPayload.value = JSON.stringify(payloadObj);
-            bypassForm.submit();
+        } catch(err) {
+            regoDisplay.innerText = "UNREADABLE";
+            statusText.innerText = "MARKED (CHECK PLATE)";
+        }
 
-            setTimeout(() => {
-                statusText.innerText = "TAP CAMERA BUTTON TO SNAP";
-                cameraInput.value = "";
-            }, 2000);
+        // Asynchronous background logging to Sheets/Drive
+        const payloadObj = {
+            "action": "patrol_upload",
+            "propertyName": propertySelect.value || "GENERAL PATROL",
+            "rego": detectedRego,
+            "confidence": confidence,
+            "makeModel": makeModel,
+            "imageBytes": compressedBase64
         };
+
+        formPayload.value = JSON.stringify(payloadObj);
+        bypassForm.submit();
+
+        // Unfreeze live view after 1.8s for next snap
+        setTimeout(() => {
+            freezeFrame.style.display = "none";
+            video.style.display = "block";
+            statusText.innerText = "READY FOR NEXT CAR";
+        }, 1800);
     });
 </script>
 
