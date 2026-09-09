@@ -1,0 +1,312 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>TOW RUN</title>
+    
+    <!-- PWA Directives -->
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Tow Run">
+    
+    <!-- Embedded "T" Tile Icon -->
+    <link rel="apple-touch-icon" href="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512' width='512' height='512'><rect width='512' height='512' rx='115' fill='%231c1c1e'/><rect x='30' y='30' width='452' height='452' rx='95' fill='url(%23grad)'/><defs><linearGradient id='grad' x1='0%25' y1='0%25' x2='0%25' y2='100%25'><stop offset='0%25' stop-color='%232c2c2e'/><stop offset='100%25' stop-color='%23121212'/></linearGradient></defs><text x='50%25' y='66%25' font-family='-apple-system, BlinkMacSystemFont, Arial, sans-serif' font-size='320' font-weight='900' fill='%2300e676' text-anchor='middle'>T</text></svg>">
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512' width='512' height='512'><rect width='512' height='512' rx='115' fill='%231c1c1e'/><rect x='30' y='30' width='452' height='452' rx='95' fill='url(%23grad)'/><defs><linearGradient id='grad' x1='0%25' y1='0%25' x2='0%25' y2='100%25'><stop offset='0%25' stop-color='%232c2c2e'/><stop offset='100%25' stop-color='%23121212'/></linearGradient></defs><text x='50%25' y='66%25' font-family='-apple-system, BlinkMacSystemFont, Arial, sans-serif' font-size='320' font-weight='900' fill='%2300e676' text-anchor='middle'>T</text></svg>">
+    <link rel="manifest" href="manifest-tow.json?v=1">
+
+    <style>
+        * { box-sizing: border-box; }
+        body { 
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; 
+            margin: 0; 
+            padding: 16px; 
+            background: #121212; 
+            color: #fff; 
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+            -webkit-user-select: none;
+        }
+        .header {
+            text-align: center;
+            margin-top: 10px;
+            margin-bottom: 16px;
+            width: 100%;
+            max-width: 440px;
+            position: relative;
+        }
+        .header h1 {
+            margin: 0;
+            font-size: 38px;
+            font-weight: 900;
+            color: #00e676;
+            letter-spacing: 3px;
+        }
+        .back-btn {
+            position: absolute;
+            left: 0;
+            top: 4px;
+            background: #2a2a2a;
+            color: #00e676;
+            border: 1px solid #333;
+            border-radius: 10px;
+            padding: 8px 16px;
+            font-weight: 800;
+            font-size: 14px;
+            cursor: pointer;
+            display: none;
+        }
+        .property-card {
+            background: #1e1e1e;
+            border-radius: 18px;
+            padding: 18px;
+            width: 100%;
+            max-width: 440px;
+            border: 1px solid #2a2a2a;
+            box-shadow: 0 6px 20px rgba(0,0,0,0.6);
+            margin-bottom: 16px;
+        }
+        .prop-title {
+            font-size: 20px;
+            font-weight: 900;
+            color: #fff;
+            text-align: center;
+            margin-bottom: 12px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        .tiles-row {
+            display: flex;
+            gap: 12px;
+            justify-content: space-between;
+        }
+        .tile {
+            flex: 1;
+            border-radius: 14px;
+            padding: 14px 6px;
+            text-align: center;
+            cursor: pointer;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.4);
+        }
+        .tile:active { transform: scale(0.96); }
+        .tile-red { background: #d32f2f; color: #fff; }
+        .tile-yellow { background: #fbc02d; color: #000; }
+        .tile-green { background: #388e3c; color: #fff; }
+        
+        .tile-num {
+            font-size: 36px;
+            font-weight: 900;
+            line-height: 1;
+        }
+        .tile-label {
+            font-size: 10px;
+            font-weight: 800;
+            text-transform: uppercase;
+            margin-top: 6px;
+            letter-spacing: 0.5px;
+        }
+        
+        /* Detail View */
+        .detail-card {
+            background: #1e1e1e;
+            border-radius: 18px;
+            padding: 20px;
+            width: 100%;
+            max-width: 440px;
+            border: 1px solid #2a2a2a;
+            display: none;
+        }
+        .detail-header {
+            font-size: 22px;
+            font-weight: 900;
+            text-align: center;
+            margin-bottom: 16px;
+            text-transform: uppercase;
+        }
+        .vehicle-item {
+            background: #2a2a2a;
+            border-radius: 12px;
+            padding: 14px;
+            margin-bottom: 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-left: 6px solid #888;
+        }
+        .vehicle-item.red { border-left-color: #d32f2f; }
+        .vehicle-item.yellow { border-left-color: #fbc02d; }
+        .vehicle-item.green { border-left-color: #388e3c; }
+
+        .v-rego {
+            font-size: 24px;
+            font-weight: 900;
+            color: #00e676;
+            letter-spacing: 1.5px;
+        }
+        .v-expiry {
+            font-size: 13px;
+            font-weight: 700;
+            color: #aaa;
+            text-align: right;
+        }
+        #loading {
+            font-weight: 800;
+            font-size: 18px;
+            color: #00e676;
+            margin-top: 40px;
+        }
+    </style>
+</head>
+<body>
+
+<div class="header">
+    <button class="back-btn" id="backBtn">← BACK</button>
+    <h1 id="pageTitle">TOW RUN</h1>
+</div>
+
+<div id="loading">LOADING DASHBOARD...</div>
+<div id="mainList" style="width:100%; max-width:440px;"></div>
+
+<div class="detail-card" id="detailCard">
+    <div class="detail-header" id="detailTitle">VEHICLE LIST</div>
+    <div id="vehicleList"></div>
+</div>
+
+<script>
+    const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzoWD84FAwprSdWAZlm4YeyjU9ps3kTW_XXN_QMkTJxvm-LMrnFIZ2RzDLDShbV5ATK8g/exec";
+    
+    let rawData = [];
+    let processedProperties = {};
+
+    const mainList = document.getElementById('mainList');
+    const detailCard = document.getElementById('detailCard');
+    const vehicleList = document.getElementById('vehicleList');
+    const loading = document.getElementById('loading');
+    const backBtn = document.getElementById('backBtn');
+    const pageTitle = document.getElementById('pageTitle');
+    const detailTitle = document.getElementById('detailTitle');
+
+    window.addEventListener('load', async () => {
+        await loadDashboard();
+    });
+
+    async function loadDashboard() {
+        try {
+            const res = await fetch(`${GOOGLE_SCRIPT_URL}?action=get_tow_run`);
+            rawData = await res.json();
+            processData();
+            renderDashboard();
+        } catch(e) {
+            loading.innerText = "FAILED TO LOAD DATA";
+        }
+    }
+
+    function processData() {
+        processedProperties = {};
+
+        // Establish 3:30 AM cutoff for today
+        const now = new Date();
+        const cutoff = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 3, 30, 0, 0);
+
+        rawData.forEach(item => {
+            const prop = item.property || "GENERAL";
+            if (!processedProperties[prop]) {
+                processedProperties[prop] = { red: [], yellow: [], green: [] };
+            }
+
+            const expiryDate = new Date(item.expiry);
+            const isExempt = item.pass && item.pass.toUpperCase().includes("EXEMPT");
+
+            if (isExempt) {
+                processedProperties[prop].green.push(item);
+            } else if (expiryDate < cutoff) {
+                // Expired before 3:30 AM -> Ready to Tow
+                processedProperties[prop].red.push(item);
+            } else {
+                // Not expired by 3:30 AM -> Active / Pending
+                processedProperties[prop].yellow.push(item);
+            }
+        });
+    }
+
+    function renderDashboard() {
+        loading.style.display = "none";
+        mainList.innerHTML = "";
+
+        Object.keys(processedProperties).forEach(propName => {
+            const prop = processedProperties[propName];
+
+            const card = document.createElement('div');
+            card.className = 'property-card';
+            card.innerHTML = `
+                <div class="prop-title">${propName}</div>
+                <div class="tiles-row">
+                    <div class="tile tile-red" onclick="showDetails('${propName}', 'red')">
+                        <div class="tile-num">${prop.red.length}</div>
+                        <div class="tile-label">READY TO TOW</div>
+                    </div>
+                    <div class="tile tile-yellow" onclick="showDetails('${propName}', 'yellow')">
+                        <div class="tile-num">${prop.yellow.length}</div>
+                        <div class="tile-label">MARKED</div>
+                    </div>
+                    <div class="tile tile-green" onclick="showDetails('${propName}', 'green')">
+                        <div class="tile-num">${prop.green.length}</div>
+                        <div class="tile-label">EXEMPT</div>
+                    </div>
+                </div>
+            `;
+            mainList.appendChild(card);
+        });
+    }
+
+    function showDetails(propName, type) {
+        const vehicles = processedProperties[propName][type];
+        const typeLabels = { red: 'READY TO TOW', yellow: 'ACTIVE MARKED', green: 'EXEMPT PASS' };
+
+        mainList.style.display = "none";
+        detailCard.style.display = "block";
+        backBtn.style.display = "block";
+        pageTitle.innerText = "DETAILS";
+        detailTitle.innerText = `${propName}\n(${typeLabels[type]})`;
+
+        vehicleList.innerHTML = "";
+
+        if (vehicles.length === 0) {
+            vehicleList.innerHTML = "<div style='text-align:center; color:#888; font-weight:700; margin-top:20px;'>NO VEHICLES</div>";
+            return;
+        }
+
+        vehicles.forEach(v => {
+            const item = document.createElement('div');
+            item.className = `vehicle-item ${type}`;
+
+            let timeFormatted = "N/A";
+            if (v.expiry) {
+                const exp = new Date(v.expiry);
+                timeFormatted = exp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+            }
+
+            item.innerHTML = `
+                <div class="v-rego">${v.rego}</div>
+                <div class="v-expiry">
+                    <div>${type === 'green' ? 'PASS ACTIVE' : 'EXPIRATION'}</div>
+                    <div style="color:#fff;">${type === 'green' ? 'LOGGED' : timeFormatted}</div>
+                </div>
+            `;
+            vehicleList.appendChild(item);
+        });
+    }
+
+    backBtn.addEventListener('click', () => {
+        mainList.style.display = "block";
+        detailCard.style.display = "none";
+        backBtn.style.display = "none";
+        pageTitle.innerText = "TOW RUN";
+    });
+</script>
+
+</body>
+</html>
