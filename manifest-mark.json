@@ -1,0 +1,16 @@
+{
+  "name": "MARK CAR",
+  "short_name": "MARK",
+  "start_url": "./index.html?v=1",
+  "display": "standalone",
+  "background_color": "#121212",
+  "theme_color": "#121212",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512' width='512' height='512'><rect width='512' height='512' rx='115' fill='%231c1c1e'/><rect x='30' y='30' width='452' height='452' rx='95' fill='%23121212'/><text x='50%25' y='62%25' font-family='Arial, sans-serif' font-size='110' font-weight='900' fill='%2300e676' text-anchor='middle'>MARK</text></svg>",
+      "sizes": "512x512",
+      "type": "image/svg+xml"
+    }
+  ]
+}
