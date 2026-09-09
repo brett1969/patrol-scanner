@@ -11,8 +11,8 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="Patrol Scan">
     
-    <link rel="apple-touch-icon" href="apple-touch-icon.png?v=400">
-    <link rel="icon" type="image/png" href="apple-touch-icon.png?v=400">
+    <link rel="apple-touch-icon" href="apple-touch-icon.png?v=410">
+    <link rel="icon" type="image/png" href="apple-touch-icon.png?v=410">
 
     <!-- High-Speed Client OCR Engine -->
     <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
@@ -150,13 +150,13 @@
     const bypassForm = document.getElementById('bypassForm');
     const formPayload = document.getElementById('formPayload');
 
-    // 1. INITIALIZE ENGINE & GPS
     window.addEventListener('load', async () => {
         status.innerText = "Initializing Engine...";
         try {
-            ocrWorker = await Tesseract.createWorker('eng');
+            ocrWorker = await Tesseract.createWorker('eng', 1);
             await ocrWorker.setParameters({
-                tessedit_char_whitelist: 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789'
+                tessedit_char_whitelist: 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789',
+                tessedit_pageseg_mode: '7' // Single text line mode
             });
             status.innerText = "";
         } catch(e) {
@@ -202,7 +202,6 @@
         return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
     }
 
-    // 2. ON-DEVICE RECOGNITION
     cameraInput.addEventListener('change', async (e) => {
         const file = e.target.files[0];
         if (!file) return;
@@ -214,41 +213,38 @@
         img.src = URL.createObjectURL(file);
 
         img.onload = async () => {
+            // Target bumper crop region
             const width = img.width;
             const height = img.height;
             const cropX = width * 0.15;
-            const cropY = height * 0.40;
+            const cropY = height * 0.45;
             const cropW = width * 0.70;
-            const cropH = height * 0.50;
+            const cropH = height * 0.45;
 
-            canvas.width = 600;
-            canvas.height = 300;
-            ctx.drawImage(img, cropX, cropY, cropW, cropH, 0, 0, 600, 300);
-
-            const imgData = ctx.getImageData(0, 0, 600, 300);
-            const d = imgData.data;
-            for (let i = 0; i < d.length; i += 4) {
-                let v = (0.2126 * d[i] + 0.7152 * d[i+1] + 0.0722 * d[i+2] >= 120) ? 255 : 0;
-                d[i] = d[i+1] = d[i+2] = v;
-            }
-            ctx.putImageData(imgData, 0, 0);
+            canvas.width = 800;
+            canvas.height = 350;
+            
+            // Draw clean grayscale image without thresholding artifacts
+            ctx.filter = 'grayscale(100%) contrast(180%) brightness(105%)';
+            ctx.drawImage(img, cropX, cropY, cropW, cropH, 0, 0, 800, 350);
 
             let detectedRego = "UNREADABLE";
             let confidence = "LOW";
 
             if (ocrWorker) {
                 const ret = await ocrWorker.recognize(canvas);
-                const lines = ret.data.text.split('\n');
-                
-                for (let line of lines) {
-                    let clean = line.replace(/[^A-Z0-9]/g, '').toUpperCase();
-                    if (clean.startsWith('E') && clean.length >= 6) {
-                        clean = '3' + clean.substring(1);
+                let rawText = ret.data.text.replace(/[^A-Z0-9]/g, '').toUpperCase();
+
+                // Australian Alphanumeric Match Rules
+                if (rawText.length >= 3) {
+                    // Match common QLD patterns (3 Numbers + 3 Letters or 3 Letters + 3 Numbers)
+                    if (rawText.includes("QUEENSLAND") || rawText.includes("SUNSHINE")) {
+                        rawText = rawText.replace("QUEENSLAND", "").replace("SUNSHINE", "");
                     }
-                    if (clean.length >= 3 && clean.length <= 7 && !clean.includes("QUEENSLAND")) {
-                        detectedRego = clean;
+                    
+                    if (rawText.length >= 3 && rawText.length <= 7) {
+                        detectedRego = rawText;
                         confidence = "HIGH";
-                        break;
                     }
                 }
             }
