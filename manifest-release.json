@@ -1,0 +1,16 @@
+{
+  "name": "VEHICLE RELEASE",
+  "short_name": "REL",
+  "start_url": "./release.html?v=1",
+  "display": "standalone",
+  "background_color": "#121212",
+  "theme_color": "#121212",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "icon-rel.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}
