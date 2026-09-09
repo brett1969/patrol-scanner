@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>ADD EXEMPTION PASS</title>
+    <title>ADD PASS</title>
     
     <style>
         * { box-sizing: border-box; }
@@ -26,10 +26,10 @@
         }
         .header h1 {
             margin: 0;
-            font-size: 34px;
+            font-size: 38px;
             font-weight: 900;
             color: #00e676;
-            letter-spacing: 2px;
+            letter-spacing: 3px;
         }
         .card {
             background: #1e1e1e;
@@ -39,6 +39,7 @@
             max-width: 440px;
             border: 1px solid #2a2a2a;
             box-shadow: 0 6px 20px rgba(0,0,0,0.6);
+            text-align: center;
         }
         label {
             font-size: 14px;
@@ -48,6 +49,7 @@
             margin-top: 18px;
             font-weight: 800;
             letter-spacing: 1px;
+            text-align: center;
         }
         input, select {
             width: 100%;
@@ -64,6 +66,8 @@
             box-sizing: border-box;
             appearance: none;
             -webkit-appearance: none;
+            text-align: center;
+            text-align-last: center;
         }
         input[type="date"] {
             color-scheme: dark;
@@ -102,7 +106,7 @@
 <body>
 
 <div class="header">
-    <h1>ADD EXEMPTION PASS</h1>
+    <h1>ADD PASS</h1>
 </div>
 
 <div class="card">
@@ -229,7 +233,6 @@
             return;
         }
 
-        // Calculate final duration days (handles custom picked dates > 5 days)
         const sParts = startDateInput.value.split('-');
         const eParts = endDateInput.value.split('-');
         const start = new Date(sParts[0], sParts[1] - 1, sParts[2]);
@@ -251,7 +254,7 @@
         bypassForm.submit();
 
         setTimeout(() => {
-            statusDiv.innerText = "✔ EXEMPTION PASS LOGGED!";
+            statusDiv.innerText = "✔ PASS LOGGED";
             regoInput.value = "";
             propertySelect.value = "";
             durationSelect.value = "1";
