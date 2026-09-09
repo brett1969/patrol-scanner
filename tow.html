@@ -9,12 +9,12 @@
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <meta name="apple-mobile-web-app-title" content="Tow Run">
+    <meta name="apple-mobile-web-app-title" content="RUN">
     
-    <!-- Embedded "T" Tile Icon -->
-    <link rel="apple-touch-icon" href="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512' width='512' height='512'><rect width='512' height='512' rx='115' fill='%231c1c1e'/><rect x='30' y='30' width='452' height='452' rx='95' fill='url(%23grad)'/><defs><linearGradient id='grad' x1='0%25' y1='0%25' x2='0%25' y2='100%25'><stop offset='0%25' stop-color='%232c2c2e'/><stop offset='100%25' stop-color='%23121212'/></linearGradient></defs><text x='50%25' y='66%25' font-family='-apple-system, BlinkMacSystemFont, Arial, sans-serif' font-size='320' font-weight='900' fill='%2300e676' text-anchor='middle'>T</text></svg>">
-    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512' width='512' height='512'><rect width='512' height='512' rx='115' fill='%231c1c1e'/><rect x='30' y='30' width='452' height='452' rx='95' fill='url(%23grad)'/><defs><linearGradient id='grad' x1='0%25' y1='0%25' x2='0%25' y2='100%25'><stop offset='0%25' stop-color='%232c2c2e'/><stop offset='100%25' stop-color='%23121212'/></linearGradient></defs><text x='50%25' y='66%25' font-family='-apple-system, BlinkMacSystemFont, Arial, sans-serif' font-size='320' font-weight='900' fill='%2300e676' text-anchor='middle'>T</text></svg>">
-    <link rel="manifest" href="manifest-tow.json?v=1">
+    <!-- Explicit "RUN" iOS Tile Graphic -->
+    <link rel="apple-touch-icon" href="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512' width='512' height='512'><rect width='512' height='512' rx='115' fill='%231c1c1e'/><rect x='30' y='30' width='452' height='452' rx='95' fill='%23121212'/><text x='256' y='300' font-family='-apple-system, BlinkMacSystemFont, Arial, sans-serif' font-size='120' font-weight='900' fill='%2300e676' text-anchor='middle'>RUN</text></svg>">
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512' width='512' height='512'><rect width='512' height='512' rx='115' fill='%231c1c1e'/><rect x='30' y='30' width='452' height='452' rx='95' fill='%23121212'/><text x='256' y='300' font-family='-apple-system, BlinkMacSystemFont, Arial, sans-serif' font-size='120' font-weight='900' fill='%2300e676' text-anchor='middle'>RUN</text></svg>">
+    <link rel="manifest" href="manifest-tow.json?v=3">
 
     <style>
         * { box-sizing: border-box; }
@@ -109,7 +109,6 @@
             letter-spacing: 0.5px;
         }
         
-        /* Detail View */
         .detail-card {
             background: #1e1e1e;
             border-radius: 18px;
@@ -207,7 +206,6 @@
     function processData() {
         processedProperties = {};
 
-        // Establish 3:30 AM cutoff for today
         const now = new Date();
         const cutoff = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 3, 30, 0, 0);
 
@@ -223,10 +221,8 @@
             if (isExempt) {
                 processedProperties[prop].green.push(item);
             } else if (expiryDate < cutoff) {
-                // Expired before 3:30 AM -> Ready to Tow
                 processedProperties[prop].red.push(item);
             } else {
-                // Not expired by 3:30 AM -> Active / Pending
                 processedProperties[prop].yellow.push(item);
             }
         });
