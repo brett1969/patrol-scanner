@@ -97,10 +97,17 @@
             box-sizing: border-box;
             text-align: center;
             text-align-last: center;
+            appearance: none;
+            -webkit-appearance: none;
         }
         input[type="text"] {
             text-transform: uppercase;
             color: #00e676;
+        }
+        .custom-input {
+            display: none;
+            margin-top: 8px;
+            border-color: #00e676;
         }
         .photo-btn {
             background: #2979ff;
@@ -164,35 +171,61 @@
         <div class="prop-display" id="propVal">---</div>
     </div>
 
+    <!-- MAKE DROPDOWN -->
     <label>Make</label>
-    <input type="text" id="makeInput" list="makesList" placeholder="SELECT OR TYPE MAKE">
-    <datalist id="makesList">
-        <option value="Ford"><option value="GWM"><option value="Hyundai">
-        <option value="Kia"><option value="Mazda"><option value="MG">
-        <option value="Mitsubishi"><option value="Tesla"><option value="Toyota">
-    </datalist>
+    <select id="makeSelect">
+        <option value="" selected>SELECT MAKE</option>
+        <option value="Ford">Ford</option>
+        <option value="GWM">GWM</option>
+        <option value="Hyundai">Hyundai</option>
+        <option value="Kia">Kia</option>
+        <option value="Mazda">Mazda</option>
+        <option value="MG">MG</option>
+        <option value="Mitsubishi">Mitsubishi</option>
+        <option value="Tesla">Tesla</option>
+        <option value="Toyota">Toyota</option>
+        <option value="OTHER">OTHER / CUSTOM</option>
+    </select>
+    <input type="text" id="makeCustom" class="custom-input" placeholder="ENTER MAKE">
 
+    <!-- MODEL (FREE TEXT IN CAPS) -->
     <label>Model</label>
     <input type="text" id="modelInput" placeholder="E.G. COROLLA">
 
+    <!-- COLOUR DROPDOWN -->
     <label>Colour</label>
-    <input type="text" id="colourInput" list="coloursList" value="White">
-    <datalist id="coloursList">
-        <option value="Black"><option value="Blue"><option value="Gold">
-        <option value="Green"><option value="Grey"><option value="Maroon">
-        <option value="Red"><option value="Silver"><option value="White"><option value="Yellow">
-    </datalist>
+    <select id="colourSelect">
+        <option value="White" selected>White</option>
+        <option value="Black">Black</option>
+        <option value="Blue">Blue</option>
+        <option value="Gold">Gold</option>
+        <option value="Green">Green</option>
+        <option value="Grey">Grey</option>
+        <option value="Maroon">Maroon</option>
+        <option value="Red">Red</option>
+        <option value="Silver">Silver</option>
+        <option value="Yellow">Yellow</option>
+        <option value="OTHER">OTHER / CUSTOM</option>
+    </select>
+    <input type="text" id="colourCustom" class="custom-input" placeholder="ENTER COLOUR">
 
+    <!-- TYPE DROPDOWN -->
     <label>Type</label>
-    <input type="text" id="typeInput" list="typesList" value="Car">
-    <datalist id="typesList">
-        <option value="Sedan"><option value="Station Wagon"><option value="Hatchback">
-        <option value="Utility"><option value="Van">
-    </datalist>
+    <select id="typeSelect">
+        <option value="Car" selected>Car</option>
+        <option value="Sedan">Sedan</option>
+        <option value="Station Wagon">Station Wagon</option>
+        <option value="Hatchback">Hatchback</option>
+        <option value="Utility">Utility</option>
+        <option value="Van">Van</option>
+        <option value="OTHER">OTHER / CUSTOM</option>
+    </select>
+    <input type="text" id="typeCustom" class="custom-input" placeholder="ENTER TYPE">
 
+    <!-- DRIVER DROPDOWN -->
     <label>Driver</label>
     <select id="driverSelect">
-        <option value="Brett">Brett</option>
+        <option value="Brett" selected>Brett</option>
         <option value="Brian">Brian</option>
     </select>
 
@@ -217,6 +250,24 @@
 
     document.getElementById('regoVal').innerText = rego;
     document.getElementById('propVal').innerText = propertyName;
+
+    const makeSelect = document.getElementById('makeSelect');
+    const makeCustom = document.getElementById('makeCustom');
+    const colourSelect = document.getElementById('colourSelect');
+    const colourCustom = document.getElementById('colourCustom');
+    const typeSelect = document.getElementById('typeSelect');
+    const typeCustom = document.getElementById('typeCustom');
+
+    // Toggle custom free-text inputs if "OTHER / CUSTOM" is selected
+    makeSelect.addEventListener('change', () => {
+        makeCustom.style.display = (makeSelect.value === 'OTHER') ? 'block' : 'none';
+    });
+    colourSelect.addEventListener('change', () => {
+        colourCustom.style.display = (colourSelect.value === 'OTHER') ? 'block' : 'none';
+    });
+    typeSelect.addEventListener('change', () => {
+        typeCustom.style.display = (typeSelect.value === 'OTHER') ? 'block' : 'none';
+    });
 
     const cameraInput = document.getElementById('cameraInput');
     const photoTrigger = document.getElementById('photoTrigger');
@@ -259,6 +310,12 @@
     });
 
     saveBtn.addEventListener('click', () => {
+        // Resolve values (uses free-text input if OTHER was chosen)
+        const finalMake = (makeSelect.value === 'OTHER') ? makeCustom.value.trim() : makeSelect.value;
+        const finalColour = (colourSelect.value === 'OTHER') ? colourCustom.value.trim() : colourSelect.value;
+        const finalType = (typeSelect.value === 'OTHER') ? typeCustom.value.trim() : typeSelect.value;
+        const finalModel = document.getElementById('modelInput').value.trim().toUpperCase();
+
         statusDiv.style.color = "#ff1744";
         statusDiv.innerText = "LOGGING TOW & CREATING DRIVE FOLDERS...";
 
@@ -266,10 +323,10 @@
             "action": "commit_tow",
             "propertyName": propertyName,
             "rego": rego,
-            "make": document.getElementById('makeInput').value.trim(),
-            "model": document.getElementById('modelInput').value.trim(),
-            "colour": document.getElementById('colourInput').value.trim(),
-            "type": document.getElementById('typeInput').value.trim(),
+            "make": finalMake,
+            "model": finalModel,
+            "colour": finalColour,
+            "type": finalType,
             "driver": document.getElementById('driverSelect').value,
             "imageBytes": capturedBase64
         };
