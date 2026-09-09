@@ -50,17 +50,6 @@
             box-shadow: 0 6px 20px rgba(0,0,0,0.6);
             text-align: center;
         }
-        .rego-banner {
-            background: #2a2a2a;
-            border-radius: 12px;
-            padding: 8px;
-            margin-bottom: 12px;
-            font-size: 30px;
-            font-weight: 900;
-            color: #00e676;
-            letter-spacing: 2px;
-            border: 1px solid #333;
-        }
         label {
             font-size: 12px;
             text-transform: uppercase;
@@ -90,6 +79,14 @@
             -webkit-appearance: none;
         }
         input[type="text"] { text-transform: uppercase; color: #00e676; }
+        .rego-input {
+            font-size: 26px !important;
+            font-weight: 900 !important;
+            letter-spacing: 2px !important;
+            height: 60px !important;
+            border: 2px solid #00e676 !important;
+            background: #252525 !important;
+        }
         .custom-input { display: none; margin-top: 6px; border-color: #00e676; }
         
         .camera-box {
@@ -156,7 +153,9 @@
 </div>
 
 <div class="card">
-    <div class="rego-banner" id="regoVal">---</div>
+    <!-- EDITABLE REGISTRATION FIELD -->
+    <label>Vehicle Registration</label>
+    <input type="text" id="regoInput" class="rego-input" placeholder="ENTER REGO" maxlength="10">
 
     <!-- 1. LOCATION -->
     <label>Location (Towed From)</label>
@@ -246,9 +245,10 @@
     const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzoWD84FAwprSdWAZlm4YeyjU9ps3kTW_XXN_QMkTJxvm-LMrnFIZ2RzDLDShbV5ATK8g/exec";
     const urlParams = new URLSearchParams(window.location.search);
     const passedProp = decodeURIComponent(urlParams.get('prop') || '');
-    const rego = (urlParams.get('rego') || 'UNKNOWN').toUpperCase();
+    const passedRego = (urlParams.get('rego') || '').toUpperCase();
 
-    document.getElementById('regoVal').innerText = rego;
+    const regoInput = document.getElementById('regoInput');
+    regoInput.value = passedRego;
 
     const locationSelect = document.getElementById('locationSelect');
     const makeSelect = document.getElementById('makeSelect');
@@ -345,6 +345,7 @@
     });
 
     saveBtn.addEventListener('click', () => {
+        const finalRego = regoInput.value.trim().toUpperCase();
         const finalLocation = locationSelect.value;
         const finalMake = (makeSelect.value === 'OTHER') ? makeCustom.value.trim() : makeSelect.value;
         const finalModel = modelInput.value.trim().toUpperCase();
@@ -352,6 +353,11 @@
         const finalType = (typeSelect.value === 'OTHER') ? typeCustom.value.trim() : typeSelect.value;
         const finalDriver = driverSelect.value;
 
+        if (!finalRego) {
+            statusDiv.style.color = "#ff5252";
+            statusDiv.innerText = "PLEASE ENTER REGISTRATION";
+            return;
+        }
         if (!finalLocation) {
             statusDiv.style.color = "#ff5252";
             statusDiv.innerText = "PLEASE SELECT LOCATION";
@@ -394,7 +400,7 @@
         const payloadObj = {
             "action": "commit_tow",
             "propertyName": finalLocation,
-            "rego": rego,
+            "rego": finalRego,
             "make": finalMake,
             "model": finalModel,
             "colour": finalColour,
