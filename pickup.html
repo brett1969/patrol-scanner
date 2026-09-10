@@ -398,9 +398,21 @@
             return;
         }
 
-        // Build URL parameters for Policelink launch
-        const pUrl = `https://www.police.qld.gov.au/policelink-reporting/tow-notification-launch?rego=${encodeURIComponent(finalRego)}&make=${encodeURIComponent(finalMake)}&model=${encodeURIComponent(finalModel)}&colour=${encodeURIComponent(finalColour)}&loc=${encodeURIComponent(finalLocation)}`;
-        policeBtn.href = pUrl;
+        // Store payload in Window Name memory before opening portal
+        const towData = {
+            rego: finalRego,
+            make: finalMake,
+            model: finalModel,
+            colour: finalColour,
+            loc: finalLocation,
+            yard: "4 Lau Place, Ashmore QLD 4124"
+        };
+        
+        policeBtn.onclick = function(e) {
+            e.preventDefault();
+            window.name = JSON.stringify(towData);
+            window.location.href = "https://www.police.qld.gov.au/policelink-reporting/tow-notification-launch";
+        };
 
         statusDiv.style.color = "#ff1744";
         statusDiv.innerText = "LOGGING TOW & CREATING DRIVE FOLDERS...";
