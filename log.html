@@ -16,71 +16,78 @@
 
     <style>
         * { box-sizing: border-box; }
-        html, body { 
+        body { 
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; 
             margin: 0; 
-            padding: 0; 
-            width: 100%; 
-            height: 100%; 
+            padding: 24px; 
             background: #121212; 
             color: #fff; 
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-            overflow: hidden;
             display: flex;
             flex-direction: column;
-        }
-        .header {
-            background: #1e1e1e;
-            padding: 10px 16px;
-            display: flex;
             align-items: center;
-            justify-content: space-between;
-            border-bottom: 1px solid #2a2a2a;
-            height: 56px;
-            flex-shrink: 0;
+            justify-content: center;
+            min-height: 100vh;
+            text-align: center;
+            -webkit-user-select: none;
         }
         .header h1 {
             margin: 0;
-            font-size: 20px;
+            font-size: 36px;
             font-weight: 900;
             color: #00e676;
-            letter-spacing: 2px;
+            letter-spacing: 3px;
+        }
+        .sub-text {
+            color: #aaa;
+            font-size: 15px;
+            font-weight: 700;
+            margin-top: 10px;
+            margin-bottom: 30px;
         }
         .open-btn {
-            background: #2a2a2a;
-            color: #00e676;
-            border: 1px solid #333;
-            border-radius: 8px;
-            padding: 6px 12px;
-            font-size: 12px;
-            font-weight: 800;
-            text-decoration: none;
-            cursor: pointer;
-        }
-        .open-btn:active { transform: scale(0.95); }
-        .iframe-container {
-            flex-grow: 1;
-            width: 100%;
-            height: calc(100% - 56px);
-            background: #ffffff;
-        }
-        iframe {
-            width: 100%;
-            height: 100%;
+            background: #00e676;
+            color: #000;
+            font-weight: 900;
             border: none;
+            border-radius: 16px;
+            height: 68px;
+            font-size: 22px;
+            width: 100%;
+            max-width: 380px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-decoration: none;
+            box-shadow: 0 6px 20px rgba(0, 230, 118, 0.4);
+            letter-spacing: 1px;
         }
+        .open-btn:active { transform: scale(0.96); }
     </style>
 </head>
 <body>
 
 <div class="header">
     <h1>MASTER LOG</h1>
-    <!-- Opens directly in Google Sheets app if installed on phone -->
-    <a href="https://docs.google.com/spreadsheets/d/1c5_t0x2e_Gtsqn1M_pRI4WPA1qdLApQyA0eJitIpkI8/edit" target="_blank" class="open-btn">OPEN APP ↗</a>
 </div>
+<div class="sub-text">Opening Tow Logs Spreadsheet...</div>
 
-<div class="iframe-container">
-    <iframe src="https://docs.google.com/spreadsheets/d/1c5_t0x2e_Gtsqn1M_pRI4WPA1qdLApQyA0eJitIpkI8/edit?rm=minimal" allow="clipboard-read; clipboard-write"></iframe>
-</div>
+<a id="sheetLink" href="googlesheets://docs.google.com/spreadsheets/d/1c5_t0x2e_Gtsqn1M_pRI4WPA1qdLApQyA0eJitIpkI8/edit" class="open-btn">OPEN WORKBOOK ↗</a>
+
+<script>
+    const SHEET_ID = "1c5_t0x2e_Gtsqn1M_pRI4WPA1qdLApQyA0eJitIpkI8";
+    const appUrl = `googlesheets://docs.google.com/spreadsheets/d/${SHEET_ID}/edit`;
+    const webUrl = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/edit`;
+
+    window.addEventListener('load', () => {
+        // Attempt immediate deep-link jump to the Google Sheets App
+        window.location.href = appUrl;
+
+        // Fallback to Web URL if app is not installed
+        setTimeout(() => {
+            document.getElementById('sheetLink').href = webUrl;
+        }, 1200);
+    });
+</script>
 
 </body>
 </html>
