@@ -233,7 +233,7 @@
     <div class="photo-count" id="photoCountText">0 PHOTOS CAPTURED</div>
 
     <button class="submit-btn" id="saveBtn">TOW</button>
-    <a href="https://www.police.qld.gov.au/policelink-reporting/tow-notification-launch" target="_blank" class="police-btn" id="policeBtn">⚡ OPEN POLICELINK PORTAL</a>
+    <a href="#" target="_blank" class="police-btn" id="policeBtn">⚡ OPEN POLICELINK PORTAL</a>
     
     <div id="status"></div>
 </div>
@@ -398,19 +398,9 @@
             return;
         }
 
-        // SAVE FIELD PAYLOAD TO LOCAL STORAGE FOR SAFARI BOOKMARKLET FILL
-        const pwaData = {
-            rego: finalRego,
-            make: finalMake,
-            model: finalModel,
-            colour: finalColour,
-            type: finalType,
-            location: finalLocation,
-            driver: finalDriver,
-            phone: "0450605370",
-            yard: "4 Lau Place, Ashmore QLD 4124"
-        };
-        localStorage.setItem("LAST_TOW_PAYLOAD", JSON.stringify(pwaData));
+        // Build URL parameters for Policelink launch
+        const pUrl = `https://www.police.qld.gov.au/policelink-reporting/tow-notification-launch?rego=${encodeURIComponent(finalRego)}&make=${encodeURIComponent(finalMake)}&model=${encodeURIComponent(finalModel)}&colour=${encodeURIComponent(finalColour)}&loc=${encodeURIComponent(finalLocation)}`;
+        policeBtn.href = pUrl;
 
         statusDiv.style.color = "#ff1744";
         statusDiv.innerText = "LOGGING TOW & CREATING DRIVE FOLDERS...";
