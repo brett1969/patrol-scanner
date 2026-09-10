@@ -3,111 +3,187 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>VEHICLE RELEASE</title>
+    <title>RELEASE VEHICLE</title>
     
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="RELEASE">
     
-    <link rel="apple-touch-icon" href="icon-rel.png?v=1">
-    <link rel="icon" type="image/png" href="icon-rel.png?v=1">
+    <link rel="apple-touch-icon" href="icon-release.png?v=1">
+    <link rel="icon" type="image/png" href="icon-release.png?v=1">
     <link rel="manifest" href="manifest-release.json?v=1">
-
-    <!-- OCR Engine for License Auto-Fill -->
-    <script src="https://cdn.jsdelivr.net/npm/tesseract.js@4/dist/tesseract.min.js"></script>
 
     <style>
         * { box-sizing: border-box; }
         body { 
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; 
-            margin: 0; padding: 12px; background: #121212; color: #fff; 
-            display: flex; flex-direction: column; align-items: center; min-height: 100vh;
+            margin: 0; 
+            padding: 12px; 
+            background: #121212; 
+            color: #fff; 
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
         }
-        .header { text-align: center; margin-top: 4px; margin-bottom: 12px; width: 100%; max-width: 440px; }
-        .header h1 { margin: 0; font-size: 34px; font-weight: 900; color: #00e676; letter-spacing: 2px; }
-        
-        .list-container { width: 100%; max-width: 440px; }
-        .rego-card-btn {
-            background: #1e1e1e; border: 2px solid #00e676; border-radius: 16px;
-            padding: 16px; width: 100%; margin-bottom: 12px; text-align: center;
-            cursor: pointer; box-shadow: 0 4px 14px rgba(0, 230, 118, 0.2);
+        .header { text-align: center; margin-top: 4px; margin-bottom: 12px; }
+        .header h1 { margin: 0; font-size: 32px; font-weight: 900; color: #00e676; letter-spacing: 2px; }
+        .card {
+            background: #1e1e1e;
+            border-radius: 18px;
+            padding: 18px;
+            width: 100%;
+            max-width: 440px;
+            border: 1px solid #2a2a2a;
+            box-shadow: 0 6px 20px rgba(0,0,0,0.6);
         }
-        .rego-card-btn:active { transform: scale(0.97); }
-        .card-rego { font-size: 32px; font-weight: 900; color: #00e676; letter-spacing: 2px; }
-        .card-sub { font-size: 14px; font-weight: 700; color: #aaa; margin-top: 4px; text-transform: uppercase; }
-
-        .form-card {
-            background: #1e1e1e; border-radius: 18px; padding: 18px; width: 100%;
-            max-width: 440px; border: 1px solid #2a2a2a; display: none;
+        label {
+            font-size: 11px;
+            text-transform: uppercase;
+            color: #aaa;
+            display: block;
+            margin-top: 12px;
+            font-weight: 800;
+            letter-spacing: 1px;
         }
-        .section-title {
-            font-size: 14px; font-weight: 900; color: #00e676; text-transform: uppercase;
-            border-bottom: 1px solid #333; padding-bottom: 4px; margin-top: 16px; text-align: left;
+        input, select {
+            width: 100%;
+            height: 48px;
+            padding: 0 12px;
+            border-radius: 10px;
+            border: 1px solid #333;
+            background: #2a2a2a;
+            color: #fff;
+            font-size: 16px;
+            font-weight: 700;
+            margin-top: 4px;
+            outline: none;
         }
-        label { font-size: 11px; text-transform: uppercase; color: #aaa; display: block; margin-top: 8px; font-weight: 800; text-align: left; }
-        input {
-            width: 100%; height: 48px; padding: 0 12px; border-radius: 10px; border: 1px solid #333;
-            background: #2a2a2a; color: #fff; font-size: 16px; font-weight: 700; margin-top: 4px; outline: none;
+        input:focus, select:focus { border-color: #00e676; }
+        .rego-select {
+            height: 56px !important;
+            font-size: 22px !important;
+            font-weight: 900 !important;
+            color: #00e676 !important;
+            border: 2px solid #00e676 !important;
+            text-align: center;
+            text-align-last: center;
         }
-        .scan-grid { display: flex; gap: 8px; margin-top: 10px; }
-        .ocr-btn {
-            flex: 1; background: #2979ff; color: #fff; font-weight: 800; border: none;
-            border-radius: 10px; height: 46px; font-size: 13px; cursor: pointer;
+        .sig-container {
+            margin-top: 6px;
+            background: #fff;
+            border-radius: 10px;
+            position: relative;
+            touch-action: none;
         }
-        .paid-btn {
-            background: #00e676; color: #000; font-weight: 900; border: none; border-radius: 14px;
-            height: 60px; font-size: 24px; width: 100%; margin-top: 24px; cursor: pointer;
-            box-shadow: 0 6px 20px rgba(0, 230, 118, 0.4); letter-spacing: 2px;
+        canvas.sig-pad {
+            width: 100%;
+            height: 110px;
+            border-radius: 10px;
+            display: block;
+            cursor: crosshair;
         }
-        .paid-btn:active { transform: scale(0.97); }
-        #status { text-align: center; font-weight: 800; font-size: 14px; margin-top: 12px; min-height: 24px; }
+        .clear-sig {
+            position: absolute;
+            right: 8px;
+            top: 8px;
+            background: #ff1744;
+            color: #fff;
+            border: none;
+            border-radius: 6px;
+            padding: 4px 8px;
+            font-size: 10px;
+            font-weight: 800;
+            cursor: pointer;
+        }
+        .submit-btn {
+            background: #00e676;
+            color: #000;
+            font-weight: 900;
+            border: none;
+            border-radius: 14px;
+            height: 58px;
+            font-size: 22px;
+            width: 100%;
+            margin-top: 20px;
+            cursor: pointer;
+            box-shadow: 0 6px 20px rgba(0, 230, 118, 0.3);
+            letter-spacing: 1px;
+        }
+        .submit-btn:active { transform: scale(0.97); }
+        #status { text-align: center; font-weight: 800; font-size: 14px; margin-top: 14px; min-height: 20px; color: #00e676; }
+        .row-2 { display: flex; gap: 10px; }
+        .row-2 > div { flex: 1; }
     </style>
 </head>
 <body>
 
 <div class="header">
-    <h1 id="titleText">YARD RELEASE</h1>
+    <h1>RELEASE VEHICLE</h1>
 </div>
 
-<div id="loadingText" style="color:#00e676; font-weight:800; margin-top:30px;">LOADING YARD LOG...</div>
-<div class="list-container" id="yardList"></div>
+<div class="card">
+    <label>Select Vehicle in Yard</label>
+    <select id="regoSelect" class="rego-select">
+        <option value="" disabled selected>LOADING YARD VEHICLES...</option>
+    </select>
 
-<!-- RELEASE FORM -->
-<div class="form-card" id="releaseForm">
-    <div style="font-size:28px; font-weight:900; color:#00e676; text-align:center;" id="formRego">---</div>
+    <label>Owner / Claimer Full Name</label>
+    <input type="text" id="ownerName" placeholder="JOHN CITIZEN">
 
-    <div class="section-title">1. LICENSE OCR SCAN</div>
-    <div class="scan-grid">
-        <button class="ocr-btn" id="btnFront">📷 SCAN FRONT</button>
-        <button class="ocr-btn" id="btnBack">📷 SCAN BACK</button>
-    </div>
-    <input type="file" id="fileFront" accept="image/*" capture="environment" style="display:none;">
-    <input type="file" id="fileBack" accept="image/*" capture="environment" style="display:none;">
-
-    <div class="section-title">2. OWNER COLLECTION DETAILS</div>
-    <label>Full Name</label>
-    <input type="text" id="ownerName" placeholder="FULL NAME">
     <label>Address</label>
-    <input type="text" id="ownerAddress" placeholder="STREET, SUBURB, QLD">
-    <label>Phone Number</label>
-    <input type="tel" id="ownerPhone" placeholder="0400 000 000">
-    <label>Email Address</label>
-    <input type="email" id="ownerEmail" placeholder="NAME@EXAMPLE.COM">
+    <input type="text" id="ownerAddress" placeholder="123 MAIN ST, ASHMORE QLD">
 
-    <div class="section-title">3. PAYMENT DETAILS</div>
-    <label>Tow Fee (incl. GST)</label>
-    <input type="number" step="0.01" id="towFee" value="310.10">
-    <label>Storage / AH Fee (incl. GST)</label>
-    <input type="number" step="0.01" id="storageFee" value="139.90">
-    <label>Total Fee (incl. GST)</label>
-    <input type="number" step="0.01" id="totalFee" value="450.00" readonly style="color:#00e676; font-size:20px;">
+    <div class="row-2">
+        <div>
+            <label>Phone</label>
+            <input type="tel" id="ownerPhone" placeholder="0400000000">
+        </div>
+        <div>
+            <label>Email (for Tax Invoice)</label>
+            <input type="email" id="ownerEmail" placeholder="owner@email.com">
+        </div>
+    </div>
 
-    <button class="paid-btn" id="paidBtn">PAID & RELEASE</button>
+    <div class="row-2">
+        <div>
+            <label>Tow Fee ($)</label>
+            <input type="number" id="towFee" value="385.00">
+        </div>
+        <div>
+            <label>Storage Fee ($)</label>
+            <input type="number" id="storageFee" value="0.00">
+        </div>
+    </div>
+
+    <label>Total Paid ($ incl. GST)</label>
+    <input type="number" id="totalPaid" value="385.00" style="color:#00e676; font-size:20px;">
+
+    <label>Release Officer</label>
+    <select id="officerSelect">
+        <option value="Brett" selected>Brett</option>
+        <option value="Brian">Brian</option>
+    </select>
+
+    <!-- OWNER SIGNATURE CANVAS -->
+    <label>Owner Signature (Details Correct)</label>
+    <div class="sig-container">
+        <button class="clear-sig" id="clearOwnerSig">CLEAR</button>
+        <canvas id="ownerSigCanvas" class="sig-pad"></canvas>
+    </div>
+
+    <!-- OFFICER SIGNATURE CANVAS -->
+    <label>Release Officer Signature (Approved)</label>
+    <div class="sig-container">
+        <button class="clear-sig" id="clearOfficerSig">CLEAR</button>
+        <canvas id="officerSigCanvas" class="sig-pad"></canvas>
+    </div>
+
+    <button class="submit-btn" id="releaseBtn">PROCESS RELEASE</button>
     <div id="status"></div>
 </div>
 
-<canvas id="procCanvas" style="display:none;"></canvas>
 <iframe name="hiddenTarget" id="hiddenTarget" style="display:none;"></iframe>
 <form id="bypassForm" action="https://script.google.com/macros/s/AKfycbzoWD84FAwprSdWAZlm4YeyjU9ps3kTW_XXN_QMkTJxvm-LMrnFIZ2RzDLDShbV5ATK8g/exec" method="POST" target="hiddenTarget" style="display:none;">
     <input type="hidden" name="payload" id="formPayload">
@@ -115,150 +191,158 @@
 
 <script>
     const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzoWD84FAwprSdWAZlm4YeyjU9ps3kTW_XXN_QMkTJxvm-LMrnFIZ2RzDLDShbV5ATK8g/exec";
-    
-    let activeVehicles = [];
-    let selectedVehicle = null;
-    let frontBase64 = "", backBase64 = "";
 
-    const yardList = document.getElementById('yardList');
-    const releaseForm = document.getElementById('releaseForm');
-    const loadingText = document.getElementById('loadingText');
+    const regoSelect = document.getElementById('regoSelect');
+    const ownerName = document.getElementById('ownerName');
+    const ownerAddress = document.getElementById('ownerAddress');
+    const ownerPhone = document.getElementById('ownerPhone');
+    const ownerEmail = document.getElementById('ownerEmail');
+    const towFee = document.getElementById('towFee');
+    const storageFee = document.getElementById('storageFee');
+    const totalPaid = document.getElementById('totalPaid');
+    const officerSelect = document.getElementById('officerSelect');
+    const releaseBtn = document.getElementById('releaseBtn');
     const statusDiv = document.getElementById('status');
-    const towFeeInput = document.getElementById('towFee');
-    const storageFeeInput = document.getElementById('storageFee');
-    const totalFeeInput = document.getElementById('totalFee');
-    
-    const fileFront = document.getElementById('fileFront');
-    const fileBack = document.getElementById('fileBack');
-    const btnFront = document.getElementById('btnFront');
-    const btnBack = document.getElementById('btnBack');
 
-    window.addEventListener('load', fetchYardLog);
+    let yardVehicles = [];
 
-    async function fetchYardLog() {
+    // Initialize Signature Canvases
+    function setupCanvas(canvasId, clearBtnId) {
+        const canvas = document.getElementById(canvasId);
+        const ctx = canvas.getContext('2d');
+        let drawing = false;
+
+        function resize() {
+            const rect = canvas.getBoundingClientRect();
+            canvas.width = rect.width;
+            canvas.height = rect.height;
+            ctx.lineWidth = 2.5;
+            ctx.strokeStyle = "#000";
+            ctx.lineCap = "round";
+        }
+        resize();
+        window.addEventListener('resize', resize);
+
+        function getPos(e) {
+            const rect = canvas.getBoundingClientRect();
+            const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+            const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+            return { x: clientX - rect.left, y: clientY - rect.top };
+        }
+
+        function startDraw(e) {
+            drawing = true;
+            const pos = getPos(e);
+            ctx.beginPath();
+            ctx.moveTo(pos.x, pos.y);
+        }
+
+        function draw(e) {
+            if (!drawing) return;
+            e.preventDefault();
+            const pos = getPos(e);
+            ctx.lineTo(pos.x, pos.y);
+            ctx.stroke();
+        }
+
+        function stopDraw() { drawing = false; }
+
+        canvas.addEventListener('mousedown', startDraw);
+        canvas.addEventListener('mousemove', draw);
+        window.addEventListener('mouseup', stopDraw);
+
+        canvas.addEventListener('touchstart', startDraw, { passive: false });
+        canvas.addEventListener('touchmove', draw, { passive: false });
+        window.addEventListener('touchend', stopDraw);
+
+        document.getElementById(clearBtnId).addEventListener('click', () => {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+        });
+
+        return canvas;
+    }
+
+    const ownerCanvas = setupCanvas('ownerSigCanvas', 'clearOwnerSig');
+    const officerCanvas = setupCanvas('officerSigCanvas', 'clearOfficerSig');
+
+    // Auto-Calculate Total Paid
+    function updateTotal() {
+        const tf = parseFloat(towFee.value) || 0;
+        const sf = parseFloat(storageFee.value) || 0;
+        totalPaid.value = (tf + sf).toFixed(2);
+    }
+    towFee.addEventListener('input', updateTotal);
+    storageFee.addEventListener('input', updateTotal);
+
+    // Fetch Active Vehicles in Yard
+    window.addEventListener('load', async () => {
         try {
             const res = await fetch(`${GOOGLE_SCRIPT_URL}?action=get_yard_vehicles`);
-            activeVehicles = await res.json();
-            loadingText.style.display = "none";
-            renderYardList();
+            yardVehicles = await res.json();
+
+            regoSelect.innerHTML = '<option value="" disabled selected>SELECT REGO FROM YARD</option>';
+            yardVehicles.forEach(v => {
+                const opt = document.createElement('option');
+                opt.value = v.rego;
+                opt.innerText = `${v.rego} (${v.make} ${v.model})`;
+                regoSelect.appendChild(opt);
+            });
         } catch(e) {
-            loadingText.innerText = "FAILED TO LOAD YARD LOG";
+            regoSelect.innerHTML = '<option value="">ERROR LOADING YARD DATA</option>';
         }
-    }
+    });
 
-    function renderYardList() {
-        yardList.innerHTML = "";
-        if (activeVehicles.length === 0) {
-            yardList.innerHTML = "<div style='text-align:center; color:#888; font-weight:800; margin-top:30px;'>NO VEHICLES IN YARD</div>";
-            return;
-        }
+    releaseBtn.addEventListener('click', () => {
+        const selectedRego = regoSelect.value;
+        const nameVal = ownerName.value.trim();
+        const addressVal = ownerAddress.value.trim();
+        const phoneVal = ownerPhone.value.trim();
+        const emailVal = ownerEmail.value.trim();
 
-        activeVehicles.forEach((v, index) => {
-            const btn = document.createElement('div');
-            btn.className = 'rego-card-btn';
-            btn.innerHTML = `
-                <div class="card-rego">${v.rego}</div>
-                <div class="card-sub">${v.colour || ''} ${v.make || ''} ${v.model || ''}</div>
-            `;
-            btn.onclick = () => openReleaseForm(index);
-            yardList.appendChild(btn);
-        });
-    }
-
-    function openReleaseForm(index) {
-        selectedVehicle = activeVehicles[index];
-        yardList.style.display = "none";
-        releaseForm.style.display = "block";
-        document.getElementById('formRego').innerText = selectedVehicle.rego;
-        recalcTotal();
-    }
-
-    function recalcTotal() {
-        const tow = parseFloat(towFeeInput.value) || 0;
-        const storage = parseFloat(storageFeeInput.value) || 0;
-        totalFeeInput.value = (tow + storage).toFixed(2);
-    }
-
-    towFeeInput.addEventListener('input', recalcTotal);
-    storageFeeInput.addEventListener('input', recalcTotal);
-
-    // OCR Setup
-    btnFront.addEventListener('click', () => fileFront.click());
-    btnBack.addEventListener('click', () => fileBack.click());
-
-    fileFront.addEventListener('change', (e) => processOCR(e.target.files[0], 'front'));
-    fileBack.addEventListener('change', (e) => processOCR(e.target.files[0], 'back'));
-
-    async function processOCR(file, side) {
-        if (!file) return;
-        statusDiv.style.color = "#2979ff";
-        statusDiv.innerText = `SCANNING LICENSE ${side.toUpperCase()}...`;
-
-        const reader = new FileReader();
-        reader.onload = async (event) => {
-            const dataUrl = event.target.result;
-            if (side === 'front') frontBase64 = dataUrl.split(',')[1];
-            if (side === 'back') backBase64 = dataUrl.split(',')[1];
-
-            const result = await Tesseract.recognize(dataUrl, 'eng');
-            const text = result.data.text;
-
-            // Basic parsing heuristics for license text
-            const lines = text.split('\n').map(l => l.trim()).filter(l => l.length > 2);
-            if (lines.length > 0 && !document.getElementById('ownerName').value) {
-                document.getElementById('ownerName').value = lines[0].toUpperCase();
-            }
-
-            statusDiv.style.color = "#00e676";
-            statusDiv.innerText = `✔ ${side.toUpperCase()} LICENSE SCANNED`;
-        };
-        reader.readAsDataURL(file);
-    }
-
-    document.getElementById('paidBtn').addEventListener('click', () => {
-        const name = document.getElementById('ownerName').value.trim();
-        const address = document.getElementById('ownerAddress').value.trim();
-        const phone = document.getElementById('ownerPhone').value.trim();
-        const email = document.getElementById('ownerEmail').value.trim();
-
-        if (!name || !address) {
+        if (!selectedRego) {
             statusDiv.style.color = "#ff5252";
-            statusDiv.innerText = "NAME & ADDRESS REQUIRED";
+            statusDiv.innerText = "PLEASE SELECT A VEHICLE";
             return;
         }
-        if (!phone && !email) {
+        if (!nameVal || !addressVal || !phoneVal) {
             statusDiv.style.color = "#ff5252";
-            statusDiv.innerText = "PROVIDE PHONE OR EMAIL";
+            statusDiv.innerText = "PLEASE COMPLETE OWNER DETAILS";
             return;
         }
+
+        const vehicleObj = yardVehicles.find(v => v.rego === selectedRego) || {};
+
+        const ownerSigData = ownerCanvas.toDataURL('image/png').split(',')[1];
+        const officerSigData = officerCanvas.toDataURL('image/png').split(',')[1];
 
         statusDiv.style.color = "#00e676";
-        statusDiv.innerText = "PROCESSING RELEASE & INVOICE...";
+        statusDiv.innerText = "PROCESSING RELEASE & TAX INVOICE...";
 
         const payloadObj = {
             "action": "process_release",
-            "rego": selectedVehicle.rego,
-            "propertyName": selectedVehicle.propertyName,
-            "make": selectedVehicle.make,
-            "model": selectedVehicle.model,
-            "colour": selectedVehicle.colour,
-            "ownerName": name,
-            "ownerAddress": address,
-            "ownerPhone": phone,
-            "ownerEmail": email,
-            "towFee": towFeeInput.value,
-            "storageFee": storageFeeInput.value,
-            "totalPaid": totalFeeInput.value,
-            "licenseFrontBytes": frontBase64,
-            "licenseBackBytes": backBase64
+            "rego": selectedRego,
+            "make": vehicleObj.make || "",
+            "model": vehicleObj.model || "",
+            "colour": vehicleObj.colour || "",
+            "ownerName": nameVal,
+            "ownerAddress": addressVal,
+            "ownerPhone": phoneVal,
+            "ownerEmail": emailVal,
+            "towFee": towFee.value,
+            "storageFee": storageFee.value,
+            "totalPaid": totalPaid.value,
+            "officer": officerSelect.value,
+            "ownerSigBytes": ownerSigData,
+            "officerSigBytes": officerSigData
         };
 
         document.getElementById('formPayload').value = JSON.stringify(payloadObj);
         document.getElementById('bypassForm').submit();
 
         setTimeout(() => {
-            statusDiv.innerText = "✔ RELEASED & INVOICED!";
-            setTimeout(() => window.location.reload(), 1800);
+            releaseBtn.style.display = "none";
+            statusDiv.style.color = "#00e676";
+            statusDiv.innerText = "✔ VEHICLE RELEASED & INVOICE ISSUED!";
         }, 1500);
     });
 </script>
