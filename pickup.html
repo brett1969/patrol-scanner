@@ -28,18 +28,8 @@
             min-height: 100vh;
             -webkit-user-select: none;
         }
-        .header {
-            text-align: center;
-            margin-top: 4px;
-            margin-bottom: 12px;
-        }
-        .header h1 {
-            margin: 0;
-            font-size: 34px;
-            font-weight: 900;
-            color: #ff1744;
-            letter-spacing: 2px;
-        }
+        .header { text-align: center; margin-top: 4px; margin-bottom: 12px; }
+        .header h1 { margin: 0; font-size: 34px; font-weight: 900; color: #ff1744; letter-spacing: 2px; }
         .card {
             background: #1e1e1e;
             border-radius: 18px;
@@ -143,6 +133,25 @@
             letter-spacing: 2px;
         }
         .submit-btn:active { transform: scale(0.97); }
+        
+        .police-btn {
+            background: #00e676;
+            color: #000;
+            font-weight: 900;
+            border: none;
+            border-radius: 14px;
+            height: 56px;
+            font-size: 18px;
+            width: 100%;
+            margin-top: 14px;
+            cursor: pointer;
+            display: none;
+            box-shadow: 0 4px 16px rgba(0, 230, 118, 0.4);
+            letter-spacing: 1px;
+            text-decoration: none;
+            align-items: center;
+            justify-content: center;
+        }
         #status { text-align: center; font-weight: 800; font-size: 15px; margin-top: 12px; min-height: 24px; letter-spacing: 0.5px; }
     </style>
 </head>
@@ -153,17 +162,14 @@
 </div>
 
 <div class="card">
-    <!-- EDITABLE REGISTRATION FIELD -->
     <label>Vehicle Registration</label>
     <input type="text" id="regoInput" class="rego-input" placeholder="ENTER REGO" maxlength="10">
 
-    <!-- 1. LOCATION -->
     <label>Location (Towed From)</label>
     <select id="locationSelect">
         <option value="" disabled selected>SELECT LOCATION</option>
     </select>
 
-    <!-- 2. MAKE -->
     <label>Make</label>
     <select id="makeSelect">
         <option value="" selected>SELECT MAKE</option>
@@ -180,11 +186,9 @@
     </select>
     <input type="text" id="makeCustom" class="custom-input" placeholder="ENTER MAKE">
 
-    <!-- 3. MODEL -->
     <label>Model</label>
     <input type="text" id="modelInput" placeholder="">
 
-    <!-- 4. COLOUR -->
     <label>Colour</label>
     <select id="colourSelect">
         <option value="White" selected>White</option>
@@ -201,7 +205,6 @@
     </select>
     <input type="text" id="colourCustom" class="custom-input" placeholder="ENTER COLOUR">
 
-    <!-- 5. TYPE -->
     <label>Type</label>
     <select id="typeSelect">
         <option value="Car" selected>Car</option>
@@ -214,14 +217,12 @@
     </select>
     <input type="text" id="typeCustom" class="custom-input" placeholder="ENTER TYPE">
 
-    <!-- 6. DRIVER -->
     <label>Driver</label>
     <select id="driverSelect">
         <option value="Brett" selected>Brett</option>
         <option value="Brian">Brian</option>
     </select>
 
-    <!-- LIVE CAMERA SNAP -->
     <label>Snap Condition Photos</label>
     <div class="camera-box">
         <video id="webcam" autoplay playsinline muted></video>
@@ -232,6 +233,8 @@
     <div class="photo-count" id="photoCountText">0 PHOTOS CAPTURED</div>
 
     <button class="submit-btn" id="saveBtn">TOW</button>
+    <a href="https://www.police.qld.gov.au/policelink-reporting/tow-notification-launch" target="_blank" class="police-btn" id="policeBtn">📋 OPEN POLICELINK PORTAL</a>
+    
     <div id="status"></div>
 </div>
 
@@ -263,6 +266,7 @@
     const snapBtn = document.getElementById('snapBtn');
     const photoCountText = document.getElementById('photoCountText');
     const saveBtn = document.getElementById('saveBtn');
+    const policeBtn = document.getElementById('policeBtn');
     const statusDiv = document.getElementById('status');
     const canvas = document.getElementById('procCanvas');
     const ctx = canvas.getContext('2d');
@@ -394,6 +398,14 @@
             return;
         }
 
+        // Copy formatted QPS Notification data to Clipboard instantly
+        const clipSummary = `POLICELINK TOW NOTICE\nRego: ${finalRego} (QLD)\nVehicle: ${finalMake} ${finalModel} (${finalColour})\nLocation Towed From: ${finalLocation}\nTowed To: 4 Lau Place, Ashmore QLD 4124\nDriver: ${finalDriver} (National Towing - 0450605370)`;
+        
+        navigator.clipboard.writeText(clipSummary).then(() => {
+            statusDiv.style.color = "#00e676";
+            statusDiv.innerText = "✔ TOW DETAILS COPIED TO CLIPBOARD!";
+        }).catch(() => {});
+
         statusDiv.style.color = "#ff1744";
         statusDiv.innerText = "LOGGING TOW & CREATING DRIVE FOLDERS...";
 
@@ -413,11 +425,10 @@
         bypassForm.submit();
 
         setTimeout(() => {
+            saveBtn.style.display = "none";
+            policeBtn.style.display = "flex";
             statusDiv.style.color = "#00e676";
-            statusDiv.innerText = "✔ TOW LOGGED TO YARD LOG!";
-            setTimeout(() => {
-                window.location.href = "tow.html";
-            }, 1800);
+            statusDiv.innerText = "✔ TOW LOGGED! TAP BELOW TO NOTIFY POLICELINK";
         }, 1200);
     });
 </script>
