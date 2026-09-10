@@ -69,23 +69,19 @@
 <div class="header">
     <h1>MASTER LOG</h1>
 </div>
-<div class="sub-text">Opening Tow Logs Spreadsheet...</div>
+<div class="sub-text" id="statusText">Opening Tow Logs Spreadsheet...</div>
 
-<a id="sheetLink" href="googlesheets://docs.google.com/spreadsheets/d/1c5_t0x2e_Gtsqn1M_pRI4WPA1qdLApQyA0eJitIpkI8/edit" class="open-btn">OPEN WORKBOOK ↗</a>
+<a id="sheetLink" href="https://docs.google.com/spreadsheets/d/1c5_t0x2e_Gtsqn1M_pRI4WPA1qdLApQyA0eJitIpkI8/edit?usp=drivesdk" class="open-btn">OPEN WORKBOOK ↗</a>
 
 <script>
     const SHEET_ID = "1c5_t0x2e_Gtsqn1M_pRI4WPA1qdLApQyA0eJitIpkI8";
-    const appUrl = `googlesheets://docs.google.com/spreadsheets/d/${SHEET_ID}/edit`;
-    const webUrl = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/edit`;
+    // Drivesdk parameter forces mobile OS universal link handlers to authorize account credentials smoothly
+    const directUrl = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/edit?usp=drivesdk`;
 
     window.addEventListener('load', () => {
-        // Attempt immediate deep-link jump to the Google Sheets App
-        window.location.href = appUrl;
-
-        // Fallback to Web URL if app is not installed
         setTimeout(() => {
-            document.getElementById('sheetLink').href = webUrl;
-        }, 1200);
+            window.location.href = directUrl;
+        }, 300);
     });
 </script>
 
