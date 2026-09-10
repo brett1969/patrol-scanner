@@ -134,16 +134,31 @@
         }
         .submit-btn:active { transform: scale(0.97); }
         
+        .copy-btn {
+            background: #2979ff;
+            color: #fff;
+            font-weight: 900;
+            border: none;
+            border-radius: 14px;
+            height: 52px;
+            font-size: 16px;
+            width: 100%;
+            margin-top: 12px;
+            cursor: pointer;
+            display: none;
+            box-shadow: 0 4px 14px rgba(41, 121, 255, 0.4);
+            letter-spacing: 1px;
+        }
         .police-btn {
             background: #00e676;
             color: #000;
             font-weight: 900;
             border: none;
             border-radius: 14px;
-            height: 56px;
+            height: 58px;
             font-size: 18px;
             width: 100%;
-            margin-top: 14px;
+            margin-top: 10px;
             cursor: pointer;
             display: none;
             box-shadow: 0 4px 16px rgba(0, 230, 118, 0.4);
@@ -233,6 +248,7 @@
     <div class="photo-count" id="photoCountText">0 PHOTOS CAPTURED</div>
 
     <button class="submit-btn" id="saveBtn">TOW</button>
+    <button class="copy-btn" id="manualCopyBtn">📋 COPY NOTICE DETAILS AGAIN</button>
     <a href="https://www.police.qld.gov.au/policelink-reporting/tow-notification-launch" target="_blank" class="police-btn" id="policeBtn">📋 OPEN POLICELINK PORTAL</a>
     
     <div id="status"></div>
@@ -266,6 +282,7 @@
     const snapBtn = document.getElementById('snapBtn');
     const photoCountText = document.getElementById('photoCountText');
     const saveBtn = document.getElementById('saveBtn');
+    const manualCopyBtn = document.getElementById('manualCopyBtn');
     const policeBtn = document.getElementById('policeBtn');
     const statusDiv = document.getElementById('status');
     const canvas = document.getElementById('procCanvas');
@@ -274,6 +291,7 @@
     const formPayload = document.getElementById('formPayload');
 
     let capturedPhotos = [];
+    let formattedClipSummary = "";
 
     window.addEventListener('load', async () => {
         initCamera();
@@ -348,6 +366,40 @@
         setTimeout(() => video.style.opacity = '1', 100);
     });
 
+    function copyTextToClipboard(text) {
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+            navigator.clipboard.writeText(text).then(() => {
+                statusDiv.style.color = "#00e676";
+                statusDiv.innerText = "✔ COPIED TO CLIPBOARD!";
+            }).catch(() => fallbackCopy(text));
+        } else {
+            fallbackCopy(text);
+        }
+    }
+
+    function fallbackCopy(text) {
+        const tempInput = document.createElement("textarea");
+        tempInput.value = text;
+        tempInput.style.position = "fixed";
+        tempInput.style.opacity = "0";
+        document.body.appendChild(tempInput);
+        tempInput.focus();
+        tempInput.select();
+        try {
+            document.execCommand('copy');
+            statusDiv.style.color = "#00e676";
+            statusDiv.innerText = "✔ COPIED TO CLIPBOARD!";
+        } catch (err) {
+            statusDiv.style.color = "#ff5252";
+            statusDiv.innerText = "CLIPBOARD COPY FAILED - TAP MANUAL COPY";
+        }
+        document.body.removeChild(tempInput);
+    }
+
+    manualCopyBtn.addEventListener('click', () => {
+        copyTextToClipboard(formattedClipSummary);
+    });
+
     saveBtn.addEventListener('click', () => {
         const finalRego = regoInput.value.trim().toUpperCase();
         const finalLocation = locationSelect.value;
@@ -398,13 +450,10 @@
             return;
         }
 
-        // Copy formatted QPS Notification data to Clipboard instantly
-        const clipSummary = `POLICELINK TOW NOTICE\nRego: ${finalRego} (QLD)\nVehicle: ${finalMake} ${finalModel} (${finalColour})\nLocation Towed From: ${finalLocation}\nTowed To: 4 Lau Place, Ashmore QLD 4124\nDriver: ${finalDriver} (National Towing - 0450605370)`;
+        // Format clipboard summary & trigger immediate user gesture write
+        formattedClipSummary = `POLICELINK TOW NOTICE\nRego: ${finalRego} (QLD)\nVehicle: ${finalMake} ${finalModel} (${finalColour})\nLocation Towed From: ${finalLocation}\nTowed To: 4 Lau Place, Ashmore QLD 4124\nDriver: ${finalDriver} (National Towing - 0450605370)`;
         
-        navigator.clipboard.writeText(clipSummary).then(() => {
-            statusDiv.style.color = "#00e676";
-            statusDiv.innerText = "✔ TOW DETAILS COPIED TO CLIPBOARD!";
-        }).catch(() => {});
+        copyTextToClipboard(formattedClipSummary);
 
         statusDiv.style.color = "#ff1744";
         statusDiv.innerText = "LOGGING TOW & CREATING DRIVE FOLDERS...";
@@ -426,6 +475,7 @@
 
         setTimeout(() => {
             saveBtn.style.display = "none";
+            manualCopyBtn.style.display = "block";
             policeBtn.style.display = "flex";
             statusDiv.style.color = "#00e676";
             statusDiv.innerText = "✔ TOW LOGGED! TAP BELOW TO NOTIFY POLICELINK";
