@@ -12,347 +12,242 @@
     
     <link rel="apple-touch-icon" href="icon-run.png?v=1">
     <link rel="icon" type="image/png" href="icon-run.png?v=1">
-    <link rel="manifest" href="manifest-tow.json?v=1">
+    <link rel="manifest" href="manifest-run.json?v=1">
 
     <style>
         * { box-sizing: border-box; }
         body { 
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; 
             margin: 0; 
-            padding: 16px; 
+            padding: 12px; 
             background: #121212; 
             color: #fff; 
             display: flex;
             flex-direction: column;
             align-items: center;
             min-height: 100vh;
-            -webkit-user-select: none;
         }
-        .header {
-            text-align: center;
-            margin-top: 10px;
-            margin-bottom: 16px;
+        .header { text-align: center; margin-top: 4px; margin-bottom: 12px; }
+        .header h1 { margin: 0; font-size: 32px; font-weight: 900; color: #ffab00; letter-spacing: 2px; }
+        
+        .filter-box {
             width: 100%;
             max-width: 440px;
+            margin-bottom: 12px;
+        }
+        select {
+            width: 100%;
+            height: 50px;
+            padding: 0 14px;
+            border-radius: 12px;
+            border: 1px solid #333;
+            background: #1e1e1e;
+            color: #ffab00;
+            font-size: 18px;
+            font-weight: 800;
+            outline: none;
+            text-align: center;
+            text-align-last: center;
+            appearance: none;
+            -webkit-appearance: none;
+        }
+
+        .list-container {
+            width: 100%;
+            max-width: 440px;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .vehicle-card {
+            border-radius: 16px;
+            padding: 16px;
+            background: #1e1e1e;
+            border: 2px solid #333;
+            box-shadow: 0 4px 14px rgba(0,0,0,0.5);
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
             position: relative;
         }
-        .header h1 {
-            margin: 0;
-            font-size: 38px;
-            font-weight: 900;
-            color: #00e676;
-            letter-spacing: 3px;
-        }
-        .back-btn {
-            position: absolute;
-            left: 0;
-            top: 4px;
-            background: #2a2a2a;
-            color: #00e676;
-            border: 1px solid #333;
-            border-radius: 10px;
-            padding: 8px 14px;
-            font-weight: 800;
-            font-size: 14px;
-            cursor: pointer;
-            display: none;
-        }
-        .refresh-btn {
-            position: absolute;
-            right: 0;
-            top: 4px;
-            background: #2a2a2a;
-            color: #00e676;
-            border: 1px solid #333;
-            border-radius: 10px;
-            padding: 8px 14px;
-            font-weight: 800;
-            font-size: 14px;
-            cursor: pointer;
-        }
-        .refresh-btn:active { transform: scale(0.95); }
-        .property-card {
-            background: #1e1e1e;
-            border-radius: 18px;
-            padding: 18px;
-            width: 100%;
-            max-width: 440px;
-            border: 1px solid #2a2a2a;
-            box-shadow: 0 6px 20px rgba(0,0,0,0.6);
-            margin-bottom: 16px;
-        }
-        .prop-title {
-            font-size: 20px;
-            font-weight: 900;
-            color: #fff;
-            text-align: center;
-            margin-bottom: 12px;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-        }
-        .tiles-row {
-            display: flex;
-            gap: 12px;
-            justify-content: space-between;
-        }
-        .tile {
-            flex: 1;
-            border-radius: 14px;
-            padding: 14px 6px;
-            text-align: center;
-            cursor: pointer;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.4);
-        }
-        .tile:active { transform: scale(0.96); }
-        .tile-red { background: #d32f2f; color: #fff; }
-        .tile-yellow { background: #fbc02d; color: #000; }
-        .tile-green { background: #388e3c; color: #fff; }
-        
-        .tile-num {
-            font-size: 36px;
-            font-weight: 900;
-            line-height: 1;
-        }
-        .tile-label {
-            font-size: 10px;
-            font-weight: 800;
-            text-transform: uppercase;
-            margin-top: 6px;
-            letter-spacing: 0.5px;
-        }
-        
-        .detail-card {
-            background: #1e1e1e;
-            border-radius: 18px;
-            padding: 20px;
-            width: 100%;
-            max-width: 440px;
-            border: 1px solid #2a2a2a;
-            display: none;
-        }
-        .detail-header {
-            font-size: 22px;
-            font-weight: 900;
-            text-align: center;
-            margin-bottom: 16px;
-            text-transform: uppercase;
-        }
-        .vehicle-item {
-            background: #2a2a2a;
-            border-radius: 14px;
-            padding: 14px;
-            margin-bottom: 14px;
-            border-left: 6px solid #888;
-        }
-        .vehicle-item.red { border-left-color: #d32f2f; }
-        .vehicle-item.yellow { border-left-color: #fbc02d; }
-        .vehicle-item.green { border-left-color: #388e3c; }
 
-        .v-row {
+        /* DYNAMIC STATUS BORDERS & ACCENTS */
+        .status-yellow { border-color: #ffab00 !important; }
+        .status-yellow .badge { background: #ffab00; color: #000; }
+
+        .status-red { border-color: #ff1744 !important; }
+        .status-red .badge { background: #ff1744; color: #fff; }
+
+        .status-green { border-color: #00e676 !important; }
+        .status-green .badge { background: #00e676; color: #000; }
+
+        .card-top {
             display: flex;
             justify-content: space-between;
             align-items: center;
         }
-        .v-rego {
+        .rego-title {
             font-size: 26px;
             font-weight: 900;
-            color: #00e676;
-            letter-spacing: 1.5px;
+            letter-spacing: 1px;
+            color: #fff;
         }
-        .v-expiry {
+        .badge {
+            font-size: 11px;
+            font-weight: 900;
+            padding: 4px 10px;
+            border-radius: 20px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .card-details {
             font-size: 13px;
-            font-weight: 700;
-            color: #aaa;
-            text-align: right;
+            color: #ccc;
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
         }
-        .tow-commit-btn {
+        .property-name {
+            font-size: 15px;
+            font-weight: 800;
+            color: #fff;
+        }
+
+        .action-btn {
             background: #ff1744;
             color: #fff;
             font-weight: 900;
             border: none;
             border-radius: 10px;
-            height: 48px;
+            height: 44px;
             font-size: 16px;
             width: 100%;
-            margin-top: 12px;
+            margin-top: 6px;
             cursor: pointer;
             letter-spacing: 1px;
-            box-shadow: 0 4px 14px rgba(255, 23, 68, 0.4);
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 4px 12px rgba(255, 23, 68, 0.4);
         }
-        .tow-commit-btn:active { transform: scale(0.97); }
-        #loading {
-            font-weight: 800;
-            font-size: 18px;
-            color: #00e676;
-            margin-top: 40px;
-        }
+        .action-btn:active { transform: scale(0.97); }
+
+        #status { text-align: center; font-weight: 800; font-size: 15px; margin-top: 14px; color: #ffab00; }
     </style>
 </head>
 <body>
 
 <div class="header">
-    <button class="back-btn" id="backBtn">← BACK</button>
-    <h1 id="pageTitle">TOW RUN</h1>
-    <button class="refresh-btn" id="refreshBtn">🔄</button>
+    <h1>TOW RUN</h1>
 </div>
 
-<div id="loading">LOADING DASHBOARD...</div>
-<div id="mainList" style="width:100%; max-width:440px;"></div>
+<div class="filter-box">
+    <select id="propertyFilter">
+        <option value="ALL" selected>ALL PROPERTIES</option>
+    </select>
+</div>
 
-<div class="detail-card" id="detailCard">
-    <div class="detail-header" id="detailTitle">VEHICLE LIST</div>
-    <div id="vehicleList"></div>
+<div class="list-container" id="runList">
+    <div id="status">LOADING RUN DATA...</div>
 </div>
 
 <script>
     const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzoWD84FAwprSdWAZlm4YeyjU9ps3kTW_XXN_QMkTJxvm-LMrnFIZ2RzDLDShbV5ATK8g/exec";
-    
-    let rawData = [];
-    let processedProperties = {};
 
-    const mainList = document.getElementById('mainList');
-    const detailCard = document.getElementById('detailCard');
-    const vehicleList = document.getElementById('vehicleList');
-    const loading = document.getElementById('loading');
-    const backBtn = document.getElementById('backBtn');
-    const refreshBtn = document.getElementById('refreshBtn');
-    const pageTitle = document.getElementById('pageTitle');
-    const detailTitle = document.getElementById('detailTitle');
+    const propertyFilter = document.getElementById('propertyFilter');
+    const runList = document.getElementById('runList');
+    const statusDiv = document.getElementById('status');
 
-    window.addEventListener('load', async () => {
-        await loadDashboard();
-    });
+    let allRunData = [];
 
-    refreshBtn.addEventListener('click', async () => {
-        loading.style.display = "block";
-        loading.innerText = "REFRESHING DASHBOARD...";
-        mainList.style.display = "none";
-        detailCard.style.display = "none";
-        backBtn.style.display = "none";
-        pageTitle.innerText = "TOW RUN";
-        await loadDashboard();
-    });
+    window.addEventListener('load', loadRunData);
 
-    async function loadDashboard() {
+    async function loadRunData() {
         try {
             const res = await fetch(`${GOOGLE_SCRIPT_URL}?action=get_tow_run`);
-            rawData = await res.json();
-            processData();
-            renderDashboard();
-        } catch(e) {
-            loading.innerText = "FAILED TO LOAD DATA";
+            allRunData = await res.json();
+
+            populateProperties(allRunData);
+            renderList();
+        } catch (e) {
+            statusDiv.innerText = "ERROR LOADING RUN DATA";
         }
     }
 
-    function processData() {
-        processedProperties = {};
+    function populateProperties(data) {
+        const props = new Set();
+        data.forEach(item => { if (item.property) props.add(item.property); });
+
+        propertyFilter.innerHTML = '<option value="ALL" selected>ALL PROPERTIES</option>';
+        props.forEach(p => {
+            const opt = document.createElement('option');
+            opt.value = p;
+            opt.innerText = p.toUpperCase();
+            propertyFilter.appendChild(opt);
+        });
+    }
+
+    propertyFilter.addEventListener('change', renderList);
+
+    function renderList() {
+        runList.innerHTML = '';
+        const selectedProp = propertyFilter.value;
         const now = new Date();
-        const cutoff = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 3, 30, 0, 0);
 
-        rawData.forEach(item => {
-            const prop = item.property || "GENERAL";
-            if (!processedProperties[prop]) {
-                processedProperties[prop] = { red: [], yellow: [], green: [] };
-            }
-
-            const expiryDate = new Date(item.expiry);
-            const isExempt = item.pass && item.pass.toUpperCase().includes("EXEMPT");
-
-            if (isExempt) {
-                processedProperties[prop].green.push(item);
-            } else if (expiryDate < cutoff || now >= cutoff) {
-                processedProperties[prop].red.push(item);
-            } else {
-                processedProperties[prop].yellow.push(item);
-            }
+        const filtered = allRunData.filter(item => {
+            if (selectedProp !== 'ALL' && item.property !== selectedProp) return false;
+            return true;
         });
-    }
 
-    function renderDashboard() {
-        loading.style.display = "none";
-        mainList.style.display = "block";
-        mainList.innerHTML = "";
-
-        Object.keys(processedProperties).forEach(propName => {
-            const prop = processedProperties[propName];
-
-            const card = document.createElement('div');
-            card.className = 'property-card';
-            card.innerHTML = `
-                <div class="prop-title">${propName}</div>
-                <div class="tiles-row">
-                    <div class="tile tile-red" onclick="showDetails('${propName}', 'red')">
-                        <div class="tile-num">${prop.red.length}</div>
-                        <div class="tile-label">READY TO TOW</div>
-                    </div>
-                    <div class="tile tile-yellow" onclick="showDetails('${propName}', 'yellow')">
-                        <div class="tile-num">${prop.yellow.length}</div>
-                        <div class="tile-label">MARKED</div>
-                    </div>
-                    <div class="tile tile-green" onclick="showDetails('${propName}', 'green')">
-                        <div class="tile-num">${prop.green.length}</div>
-                        <div class="tile-label">EXEMPT</div>
-                    </div>
-                </div>
-            `;
-            mainList.appendChild(card);
-        });
-    }
-
-    function showDetails(propName, type) {
-        const vehicles = processedProperties[propName][type];
-        const typeLabels = { red: 'READY TO TOW', yellow: 'ACTIVE MARKED', green: 'EXEMPT PASS' };
-
-        mainList.style.display = "none";
-        detailCard.style.display = "block";
-        backBtn.style.display = "block";
-        pageTitle.innerText = "DETAILS";
-        detailTitle.innerText = `${propName}\n(${typeLabels[type]})`;
-
-        vehicleList.innerHTML = "";
-
-        if (vehicles.length === 0) {
-            vehicleList.innerHTML = "<div style='text-align:center; color:#888; font-weight:700; margin-top:20px;'>NO VEHICLES</div>";
+        if (filtered.length === 0) {
+            runList.innerHTML = '<div id="status">NO MARKED VEHICLES FOUND</div>';
             return;
         }
 
-        vehicles.forEach(v => {
-            const item = document.createElement('div');
-            item.className = `vehicle-item ${type}`;
+        filtered.forEach(item => {
+            const card = document.createElement('div');
+            
+            const markedDate = new Date(item.marked);
+            const expiryDate = new Date(item.expiry);
+            
+            const isExempt = item.pass && item.pass.includes('EXEMPT');
+            const isExpired = now >= expiryDate;
 
-            let timeFormatted = "N/A";
-            if (v.expiry) {
-                const exp = new Date(v.expiry);
-                timeFormatted = exp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+            let statusClass = 'status-yellow';
+            let badgeText = 'PENDING (6HR)';
+
+            if (isExempt) {
+                statusClass = 'status-green';
+                badgeText = 'EXEMPT PASS';
+            } else if (isExpired) {
+                statusClass = 'status-red';
+                badgeText = 'READY TO TOW';
             }
 
-            const commitButton = (type === 'red' || type === 'yellow') ? 
-                `<button class="tow-commit-btn" onclick="openPickupApp('${encodeURIComponent(propName)}', '${v.rego}', '${encodeURIComponent(v.image)}')">COMMIT TO TOW</button>` : '';
+            card.className = `vehicle-card ${statusClass}`;
 
-            item.innerHTML = `
-                <div class="v-row">
-                    <div class="v-rego">${v.rego}</div>
-                    <div class="v-expiry">
-                        <div>${type === 'green' ? 'PASS ACTIVE' : 'EXPIRATION'}</div>
-                        <div style="color:#fff;">${type === 'green' ? 'LOGGED' : timeFormatted}</div>
-                    </div>
+            const formattedMarked = markedDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+            const formattedExpiry = expiryDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
+            card.innerHTML = `
+                <div class="card-top">
+                    <div class="rego-title">${item.rego}</div>
+                    <div class="badge">${badgeText}</div>
                 </div>
-                ${commitButton}
+                <div class="card-details">
+                    <div class="property-name">📍 ${item.property}</div>
+                    <div>🕒 Marked: <strong>${formattedMarked}</strong> | Expires: <strong>${formattedExpiry}</strong></div>
+                    ${isExempt ? `<div style="color:#00e676; font-weight:bold;">🛡️ ${item.pass}</div>` : ''}
+                </div>
+                ${!isExempt ? `<a href="tow.html?rego=${encodeURIComponent(item.rego)}&prop=${encodeURIComponent(item.property)}" class="action-btn">🚛 TOW VEHICLE</a>` : ''}
             `;
-            vehicleList.appendChild(item);
+
+            runList.appendChild(card);
         });
     }
-
-    function openPickupApp(prop, rego, imgUrl) {
-        window.location.href = `pickup.html?prop=${prop}&rego=${rego}&img=${imgUrl}`;
-    }
-
-    backBtn.addEventListener('click', () => {
-        mainList.style.display = "block";
-        detailCard.style.display = "none";
-        backBtn.style.display = "none";
-        pageTitle.innerText = "TOW RUN";
-    });
 </script>
 
 </body>
