@@ -43,7 +43,7 @@
             text-transform: uppercase;
             color: #aaa;
             display: block;
-            margin-top: 12px;
+            margin-top: 14px;
             font-weight: 800;
             letter-spacing: 1px;
         }
@@ -79,7 +79,7 @@
         }
         canvas.sig-pad {
             width: 100%;
-            height: 110px;
+            height: 220px; /* Doubled height for easier finger signing */
             border-radius: 10px;
             display: block;
             cursor: crosshair;
@@ -92,10 +92,11 @@
             color: #fff;
             border: none;
             border-radius: 6px;
-            padding: 4px 8px;
-            font-size: 10px;
+            padding: 6px 12px;
+            font-size: 11px;
             font-weight: 800;
             cursor: pointer;
+            z-index: 10;
         }
         .submit-btn {
             background: #00e676;
@@ -106,7 +107,7 @@
             height: 58px;
             font-size: 22px;
             width: 100%;
-            margin-top: 20px;
+            margin-top: 22px;
             cursor: pointer;
             box-shadow: 0 6px 20px rgba(0, 230, 118, 0.3);
             letter-spacing: 1px;
@@ -115,6 +116,11 @@
         #status { text-align: center; font-weight: 800; font-size: 14px; margin-top: 14px; min-height: 20px; color: #00e676; }
         .row-2 { display: flex; gap: 10px; }
         .row-2 > div { flex: 1; }
+        .section-divider {
+            border-top: 1px dashed #333;
+            margin-top: 18px;
+            padding-top: 4px;
+        }
     </style>
 </head>
 <body>
@@ -146,19 +152,29 @@
         </div>
     </div>
 
+    <!-- OWNER SIGNATURE CANVAS (PLACED ABOVE FEE SECTION) -->
+    <label style="color:#00e676;">1. Owner Signature (Details Correct)</label>
+    <div class="sig-container">
+        <button class="clear-sig" id="clearOwnerSig">CLEAR</button>
+        <canvas id="ownerSigCanvas" class="sig-pad"></canvas>
+    </div>
+
+    <!-- FEE SECTION -->
+    <div class="section-divider"></div>
+
     <div class="row-2">
         <div>
-            <label>Tow Fee ($)</label>
-            <input type="number" id="towFee" value="385.00">
+            <label>Tow Fee ($ incl. GST)</label>
+            <input type="number" id="towFee" value="310.05" step="0.01">
         </div>
         <div>
-            <label>Storage Fee ($)</label>
-            <input type="number" id="storageFee" value="0.00">
+            <label>Storage / AH Fee ($ incl. GST)</label>
+            <input type="number" id="storageFee" value="139.95" step="0.01">
         </div>
     </div>
 
     <label>Total Paid ($ incl. GST)</label>
-    <input type="number" id="totalPaid" value="385.00" style="color:#00e676; font-size:20px;">
+    <input type="number" id="totalPaid" value="450.00" step="0.01" style="color:#00e676; font-size:22px; font-weight:900;">
 
     <label>Release Officer</label>
     <select id="officerSelect">
@@ -166,15 +182,8 @@
         <option value="Brian">Brian</option>
     </select>
 
-    <!-- OWNER SIGNATURE CANVAS -->
-    <label>Owner Signature (Details Correct)</label>
-    <div class="sig-container">
-        <button class="clear-sig" id="clearOwnerSig">CLEAR</button>
-        <canvas id="ownerSigCanvas" class="sig-pad"></canvas>
-    </div>
-
-    <!-- OFFICER SIGNATURE CANVAS -->
-    <label>Release Officer Signature (Approved)</label>
+    <!-- OFFICER SIGNATURE CANVAS (KEPT AT BOTTOM) -->
+    <label style="color:#00e676;">2. Release Officer Signature (Approved)</label>
     <div class="sig-container">
         <button class="clear-sig" id="clearOfficerSig">CLEAR</button>
         <canvas id="officerSigCanvas" class="sig-pad"></canvas>
@@ -216,7 +225,7 @@
             const rect = canvas.getBoundingClientRect();
             canvas.width = rect.width;
             canvas.height = rect.height;
-            ctx.lineWidth = 2.5;
+            ctx.lineWidth = 3;
             ctx.strokeStyle = "#000";
             ctx.lineCap = "round";
         }
@@ -255,7 +264,8 @@
         canvas.addEventListener('touchmove', draw, { passive: false });
         window.addEventListener('touchend', stopDraw);
 
-        document.getElementById(clearBtnId).addEventListener('click', () => {
+        document.getElementById(clearBtnId).addEventListener('click', (e) => {
+            e.preventDefault();
             ctx.clearRect(0, 0, canvas.width, canvas.height);
         });
 
