@@ -1,0 +1,15 @@
+{
+  "name": "TOW VEHICLE",
+  "short_name": "TOW",
+  "start_url": "tow.html",
+  "display": "standalone",
+  "background_color": "#121212",
+  "theme_color": "#121212",
+  "icons": [
+    {
+      "src": "icon-tow.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    }
+  ]
+}
