@@ -79,7 +79,7 @@
         }
         canvas.sig-pad {
             width: 100%;
-            height: 220px; /* Doubled height for easier finger signing */
+            height: 220px;
             border-radius: 10px;
             display: block;
             cursor: crosshair;
@@ -152,7 +152,7 @@
         </div>
     </div>
 
-    <!-- OWNER SIGNATURE CANVAS (PLACED ABOVE FEE SECTION) -->
+    <!-- OWNER SIGNATURE CANVAS -->
     <label style="color:#00e676;">1. Owner Signature (Details Correct)</label>
     <div class="sig-container">
         <button class="clear-sig" id="clearOwnerSig">CLEAR</button>
@@ -164,11 +164,11 @@
 
     <div class="row-2">
         <div>
-            <label>Tow Fee ($ incl. GST)</label>
+            <label>Tow Fee ($)</label>
             <input type="number" id="towFee" value="310.05" step="0.01">
         </div>
         <div>
-            <label>Storage / AH Fee ($ incl. GST)</label>
+            <label>Storage / AH Fee ($)</label>
             <input type="number" id="storageFee" value="139.95" step="0.01">
         </div>
     </div>
@@ -182,7 +182,7 @@
         <option value="Brian">Brian</option>
     </select>
 
-    <!-- OFFICER SIGNATURE CANVAS (KEPT AT BOTTOM) -->
+    <!-- OFFICER SIGNATURE CANVAS -->
     <label style="color:#00e676;">2. Release Officer Signature (Approved)</label>
     <div class="sig-container">
         <button class="clear-sig" id="clearOfficerSig">CLEAR</button>
